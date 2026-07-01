@@ -16,7 +16,6 @@
             color: #333;
         }
         
-        /* CARD CONTAINERS */
         .card {
             background-color: #ffffff; padding: 30px; border-radius: 12px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.3); text-align: center;
@@ -31,11 +30,10 @@
         
         #instructionSection { display: none; max-width: 600px; text-align: left; }
         
-        /* FULL SCREEN COUNTDOWN */
         #countdownOverlay {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background-color: #165430; color: #f36621; font-size: 150px; font-weight: bold;
-            display: flex; justify-content: center; align-items: center; z-index: 1000;
+            justify-content: center; align-items: center; z-index: 1000;
         }
 
         .exam-layout { display: flex; flex-direction: row; }
@@ -73,61 +71,42 @@
         
         .nav-buttons { display: flex; justify-content: space-between; gap: 15px; }
         .nav-buttons button { width: 48%; background-color: #333; }
-        .nav-buttons button:hover { background-color: #555; }
         
-        /* GRID STYLES */
         .grid-container {
             display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
             margin-bottom: 20px; flex-grow: 1; align-content: start;
         }
         .grid-btn {
-            background-color: #e0e0e0; color: #555; border: 2px solid #ccc; /* Unattempted Default */
+            background-color: #e0e0e0; color: #555; border: 2px solid #ccc;
             padding: 10px 0; font-size: 14px; border-radius: 6px; cursor: pointer;
         }
-        .grid-btn:hover { background-color: #d0d0d0; }
-        .grid-btn.answered { background-color: #165430; color: white; border-color: #165430; } /* Attempted */
-        .grid-btn.current { border-color: #f36621; font-weight: bold; box-shadow: 0 0 5px rgba(243,102,33,0.5); } /* Active */
+        .grid-btn.answered { background-color: #165430; color: white; border-color: #165430; }
+        .grid-btn.current { border-color: #f36621; font-weight: bold; box-shadow: 0 0 5px rgba(243,102,33,0.5); }
         
         .submit-btn { background-color: #165430; width: 100%; margin-top: auto; }
-        .submit-btn:hover { background-color: #0f3d22; }
-
-        @media (max-width: 768px) {
-            .exam-layout { flex-direction: column; }
-            .right-panel { border-left: none; border-top: 2px solid #e0e0e0; padding: 20px; }
-            .grid-container { grid-template-columns: repeat(5, 1fr); }
-            #examSection { margin-top: 20px; margin-bottom: 20px; }
-        }
     </style>
 </head>
 <body>
 
-    <!-- 1. LOGIN SCREEN -->
     <div id="loginSection" class="card">
         <h2>Aneya Abacus</h2>
-        <p style="color: #666; margin-bottom: 20px;">Daily Revision Portal</p>
         <input type="number" id="mobileInput" placeholder="Enter Mobile Number">
         <button id="loginBtn" onclick="login()" style="width: 100%;">Verify Account</button>
         <p id="message" style="color: red; margin-top: 15px; display: none;"></p>
     </div>
 
-    <!-- 2. INSTRUCTIONS SCREEN -->
     <div id="instructionSection" class="card">
         <h2>Exam Instructions</h2>
         <ul class="instructions-list">
-            <li>You will have exactly <b>15 minutes</b> to complete this revision test.</li>
-            <li>Use the grid on the right to navigate between questions.</li>
-            <li>Questions you have answered will turn <b>Green</b>.</li>
-            <li>Unattempted questions will remain <b>Grey</b>.</li>
-            <li>Click "Save & Next" to lock in your answer before moving on.</li>
-            <li>Once the timer hits 00:00, the exam will auto-submit.</li>
+            <li>15 Minutes for 10 Questions.</li>
+            <li>Answered: <b>Green</b> | Unattempted: <b>Grey</b>.</li>
+            <li>Click "Save & Next" to lock answers.</li>
         </ul>
-        <button onclick="startCountdown()" style="width: 100%;">I am Ready - Start Exam</button>
+        <button onclick="startCountdown()" style="width: 100%;">Start Exam</button>
     </div>
 
-    <!-- 3. COUNTDOWN OVERLAY -->
     <div id="countdownOverlay">3</div>
 
-    <!-- 4. EXAM SCREEN -->
     <div id="examSection">
         <div class="exam-layout">
             <div class="left-panel">
@@ -135,18 +114,14 @@
                     <span id="studentNameDisplay">Student</span>
                     <span class="timer" id="timerDisplay">15:00</span>
                 </div>
-                
-                <h4 style="color: #666; margin-top: 0;">Question <span id="currentQNum">1</span> of <span id="totalQNum">30</span></h4>
-                
+                <h4 id="currentQInfo">Question 1 of 10</h4>
                 <div class="math-container" id="mathDisplay"></div>
                 <input type="number" id="answerInput" placeholder="Your Answer">
-                
                 <div class="nav-buttons">
                     <button onclick="prevQuestion()">Previous</button>
                     <button onclick="nextQuestion()">Save & Next</button>
                 </div>
             </div>
-
             <div class="right-panel">
                 <h3>Question Palette</h3>
                 <div class="grid-container" id="qGrid"></div>
@@ -156,175 +131,89 @@
     </div>
 
     <script>
-        // BESTIE, PASTE YOUR GOOGLE SCRIPT URL RIGHT HERE BELOW
         const API_URL = "https://script.google.com/macros/s/AKfycbwCkVwFtVjdvGlRY5BqCwfxkQGMgpAq-fJpuyze3d6ANilRm2LW8QI-ITuw5zT8CfJg/exec";
-        
-        let studentData = {};
-        let questions = [];
-        let currentIndex = 0;
-        let answers = {}; 
-        let timeLeft = 900; 
-        let timerInterval;
+        let studentData = {}, questions = [], currentIndex = 0, answers = {}, timeLeft = 900, timerInterval;
 
         async function login() {
             const mobile = document.getElementById('mobileInput').value;
             const msgBox = document.getElementById('message');
-            const loginBtn = document.getElementById('loginBtn');
+            if(!mobile) return;
+            msgBox.style.display = "block"; msgBox.innerText = "Authenticating...";
             
-            if(!mobile) { msgBox.style.display = "block"; msgBox.innerText = "Please enter your number!"; return; }
-
-            msgBox.style.display = "block"; msgBox.style.color = "#165430"; msgBox.innerText = "Authenticating & Loading...";
-            loginBtn.disabled = true;
-
-            try {
-                let response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "login", mobile: mobile }) });
-                let data = await response.json();
-                
-                if(data.success) {
-                    studentData = data;
-                    let qResponse = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "getQuestions", level: studentData.level }) });
-                    let qData = await qResponse.json();
-                    
-                    if(qData.success && qData.questions.length > 0) {
-                        questions = qData.questions;
-                        
-                        // Hide Login, Show Instructions
-                        document.getElementById('loginSection').style.display = "none";
-                        document.getElementById('instructionSection').style.display = "block";
-                        
-                    } else {
-                        msgBox.style.color = "red"; msgBox.innerText = "No questions found for your level!";
-                        loginBtn.disabled = false;
-                    }
-                } else {
-                    msgBox.style.color = "red"; msgBox.innerText = "Number not found. Try again!";
-                    loginBtn.disabled = false;
-                }
-            } catch (e) {
-                msgBox.style.color = "red"; msgBox.innerText = "System error. Check your connection.";
-                loginBtn.disabled = false;
-            }
+            let response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "login", mobile: mobile }) });
+            let data = await response.json();
+            if(data.success) {
+                studentData = data;
+                let qResponse = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "getQuestions", level: studentData.level }) });
+                let qData = await qResponse.json();
+                questions = qData.questions;
+                document.getElementById('loginSection').style.display = "none";
+                document.getElementById('instructionSection').style.display = "block";
+            } else { msgBox.innerText = "Student not found!"; }
         }
 
         function startCountdown() {
             document.getElementById('instructionSection').style.display = "none";
-            const countdownEl = document.getElementById('countdownOverlay');
-            countdownEl.style.display = "flex";
-            
+            const cEl = document.getElementById('countdownOverlay');
+            cEl.style.display = "flex";
             let count = 3;
-            countdownEl.innerText = count;
-            
-            let countInterval = setInterval(() => {
+            cEl.innerText = count;
+            let interval = setInterval(() => {
                 count--;
-                if(count > 0) {
-                    countdownEl.innerText = count;
-                } else if(count === 0) {
-                    countdownEl.innerText = "GO!";
-                } else {
-                    clearInterval(countInterval);
-                    countdownEl.style.display = "none";
-                    startExam();
-                }
+                if(count > 0) cEl.innerText = count;
+                else if(count === 0) cEl.innerText = "GO!";
+                else { clearInterval(interval); cEl.style.display = "none"; startExam(); }
             }, 1000);
         }
 
         function startExam() {
             document.getElementById('examSection').style.display = "block";
             document.getElementById('studentNameDisplay').innerText = studentData.name;
-            document.getElementById('totalQNum').innerText = questions.length;
-            
             buildGrid();
             loadQuestion(0);
             timerInterval = setInterval(updateTimer, 1000);
         }
 
         function buildGrid() {
-            let gridHTML = "";
-            for(let i = 0; i < questions.length; i++) {
-                gridHTML += `<button class="grid-btn" id="btn-q${i}" onclick="jumpToQuestion(${i})">${i + 1}</button>`;
-            }
-            document.getElementById('qGrid').innerHTML = gridHTML;
+            let html = "";
+            for(let i = 0; i < questions.length; i++) html += `<button class="grid-btn" id="btn-q${i}" onclick="jumpToQuestion(${i})">${i + 1}</button>`;
+            document.getElementById('qGrid').innerHTML = html;
         }
 
         function updateGridUI() {
             for(let i = 0; i < questions.length; i++) {
                 let btn = document.getElementById(`btn-q${i}`);
-                btn.classList.remove('current', 'answered');
-                
-                if(answers[i] && answers[i] !== "") {
-                    btn.classList.add('answered');
-                }
-                if(i === currentIndex) {
-                    btn.classList.add('current');
-                }
+                btn.className = "grid-btn";
+                if(answers[i]) btn.classList.add('answered');
+                if(i === currentIndex) btn.classList.add('current');
             }
         }
 
         function loadQuestion(index) {
-            if(index < 0 || index >= questions.length) return;
             currentIndex = index;
-            
-            document.getElementById('currentQNum').innerText = currentIndex + 1;
-            document.getElementById('answerInput').value = answers[currentIndex] || ""; 
-            
-            let sumString = questions[currentIndex].sum;
-            let numbersArray = sumString.split(',');
-            let mathHTML = "";
-            
-            numbersArray.forEach(num => {
-                mathHTML += `<div>${num.trim()}</div>`;
-            });
-            mathHTML += `<div class="math-line"></div>`;
-            
-            document.getElementById('mathDisplay').innerHTML = mathHTML;
-            document.getElementById('answerInput').focus();
+            document.getElementById('currentQInfo').innerText = `Question ${currentIndex + 1} of ${questions.length}`;
+            document.getElementById('answerInput').value = answers[currentIndex] || "";
+            let nums = questions[currentIndex].sum.split(',');
+            let html = "";
+            nums.forEach(n => html += `<div>${n.trim()}</div>`);
+            html += `<div class="math-line"></div>`;
+            document.getElementById('mathDisplay').innerHTML = html;
             updateGridUI();
         }
 
-        function jumpToQuestion(index) {
-            saveAnswer();
-            loadQuestion(index);
-        }
-
-        function nextQuestion() {
-            saveAnswer();
-            if(currentIndex < questions.length - 1) {
-                loadQuestion(currentIndex + 1);
-            } else {
-                updateGridUI();
-            }
-        }
-
-        function prevQuestion() {
-            saveAnswer();
-            if(currentIndex > 0) {
-                loadQuestion(currentIndex - 1);
-            } else {
-                updateGridUI();
-            }
-        }
-
-        function saveAnswer() {
-            answers[currentIndex] = document.getElementById('answerInput').value;
-        }
+        function jumpToQuestion(i) { saveAnswer(); loadQuestion(i); }
+        function nextQuestion() { saveAnswer(); if(currentIndex < questions.length - 1) loadQuestion(currentIndex + 1); }
+        function prevQuestion() { saveAnswer(); if(currentIndex > 0) loadQuestion(currentIndex - 1); }
+        function saveAnswer() { answers[currentIndex] = document.getElementById('answerInput').value; }
 
         function updateTimer() {
             timeLeft--;
-            let m = Math.floor(timeLeft / 60);
-            let s = timeLeft % 60;
+            let m = Math.floor(timeLeft / 60), s = timeLeft % 60;
             document.getElementById('timerDisplay').innerText = `${m}:${s < 10 ? '0'+s : s}`;
-            
-            if(timeLeft <= 0) {
-                clearInterval(timerInterval);
-                submitExam();
-            }
+            if(timeLeft <= 0) submitExam();
         }
 
-        function submitExam() {
-            saveAnswer();
-            clearInterval(timerInterval);
-            alert("Exam Submitted! (Backend grading logic next)");
-        }
+        function submitExam() { clearInterval(timerInterval); alert("Exam Submitted!"); }
     </script>
 </body>
 </html>
