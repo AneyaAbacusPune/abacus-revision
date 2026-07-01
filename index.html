@@ -16,46 +16,36 @@
             color: #333;
         }
         
-        /* LOGIN CARD (Kept narrow) */
-        #loginSection {
+        /* CARD CONTAINERS */
+        .card {
             background-color: #ffffff; padding: 30px; border-radius: 12px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.3); text-align: center;
             width: 90%; max-width: 400px;
         }
         
-        /* EXAM CONTAINER (Wide, Split-screen) */
         #examSection {
-            display: none;
-            background-color: #ffffff; border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-            width: 95%; max-width: 1000px;
-            overflow: hidden; /* Contains the children */
+            display: none; background-color: #ffffff; border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3); width: 95%; max-width: 1000px;
+            overflow: hidden;
         }
         
-        .exam-layout {
-            display: flex;
-            flex-direction: row;
+        #instructionSection { display: none; max-width: 600px; text-align: left; }
+        
+        /* FULL SCREEN COUNTDOWN */
+        #countdownOverlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #165430; color: #f36621; font-size: 150px; font-weight: bold;
+            display: flex; justify-content: center; align-items: center; z-index: 1000;
         }
 
-        /* LEFT PANEL: Working Area */
-        .left-panel {
-            flex: 2;
-            padding: 30px;
-        }
-        
-        /* RIGHT PANEL: Navigation Grid */
-        .right-panel {
-            flex: 1;
-            background-color: #f8f9fa;
-            border-left: 2px solid #e0e0e0;
-            padding: 30px;
-            display: flex;
-            flex-direction: column;
-        }
+        .exam-layout { display: flex; flex-direction: row; }
+        .left-panel { flex: 2; padding: 30px; }
+        .right-panel { flex: 1; background-color: #f8f9fa; border-left: 2px solid #e0e0e0; padding: 30px; display: flex; flex-direction: column; }
 
         h2 { color: #165430; margin-bottom: 5px; }
         h3 { margin-top: 0; color: #165430; border-bottom: 2px solid #165430; padding-bottom: 10px; }
-        p.subtitle { color: #666; margin-bottom: 20px; font-size: 14px; }
+        
+        ul.instructions-list { color: #555; line-height: 1.8; font-size: 16px; margin-bottom: 30px; }
         
         input[type="number"] {
             width: 100%; padding: 12px; margin-bottom: 20px; box-sizing: border-box;
@@ -75,11 +65,9 @@
         }
         .timer { font-size: 20px; font-weight: bold; color: #f36621; }
         
-        /* The Vertical Math Display */
         .math-container {
-            font-size: 32px; font-family: monospace; font-weight: bold;
-            display: flex; flex-direction: column; align-items: flex-end;
-            width: 140px; margin: 0 auto 30px auto; line-height: 1.5;
+            font-size: 32px; font-family: monospace; font-weight: bold; display: flex; flex-direction: column;
+            align-items: flex-end; width: 140px; margin: 0 auto 30px auto; line-height: 1.5;
         }
         .math-line { border-top: 4px solid #333; width: 100%; margin-top: 5px; margin-bottom: 15px; }
         
@@ -93,17 +81,16 @@
             margin-bottom: 20px; flex-grow: 1; align-content: start;
         }
         .grid-btn {
-            background-color: #fff; color: #333; border: 2px solid #ccc;
-            padding: 10px 0; font-size: 14px; border-radius: 6px;
+            background-color: #e0e0e0; color: #555; border: 2px solid #ccc; /* Unattempted Default */
+            padding: 10px 0; font-size: 14px; border-radius: 6px; cursor: pointer;
         }
-        .grid-btn:hover { background-color: #e0e0e0; }
-        .grid-btn.answered { background-color: #165430; color: white; border-color: #165430; }
-        .grid-btn.current { border-color: #f36621; color: #f36621; font-weight: bold; box-shadow: 0 0 5px rgba(243,102,33,0.5); }
+        .grid-btn:hover { background-color: #d0d0d0; }
+        .grid-btn.answered { background-color: #165430; color: white; border-color: #165430; } /* Attempted */
+        .grid-btn.current { border-color: #f36621; font-weight: bold; box-shadow: 0 0 5px rgba(243,102,33,0.5); } /* Active */
         
         .submit-btn { background-color: #165430; width: 100%; margin-top: auto; }
         .submit-btn:hover { background-color: #0f3d22; }
 
-        /* Mobile Responsiveness */
         @media (max-width: 768px) {
             .exam-layout { flex-direction: column; }
             .right-panel { border-left: none; border-top: 2px solid #e0e0e0; padding: 20px; }
@@ -114,19 +101,35 @@
 </head>
 <body>
 
-    <!-- LOGIN SCREEN -->
-    <div id="loginSection">
+    <!-- 1. LOGIN SCREEN -->
+    <div id="loginSection" class="card">
         <h2>Aneya Abacus</h2>
-        <p class="subtitle">Daily Revision Portal</p>
+        <p style="color: #666; margin-bottom: 20px;">Daily Revision Portal</p>
         <input type="number" id="mobileInput" placeholder="Enter Mobile Number">
-        <button id="loginBtn" onclick="login()" style="width: 100%;">Start Exam</button>
+        <button id="loginBtn" onclick="login()" style="width: 100%;">Verify Account</button>
         <p id="message" style="color: red; margin-top: 15px; display: none;"></p>
     </div>
 
-    <!-- EXAM SCREEN -->
+    <!-- 2. INSTRUCTIONS SCREEN -->
+    <div id="instructionSection" class="card">
+        <h2>Exam Instructions</h2>
+        <ul class="instructions-list">
+            <li>You will have exactly <b>15 minutes</b> to complete this revision test.</li>
+            <li>Use the grid on the right to navigate between questions.</li>
+            <li>Questions you have answered will turn <b>Green</b>.</li>
+            <li>Unattempted questions will remain <b>Grey</b>.</li>
+            <li>Click "Save & Next" to lock in your answer before moving on.</li>
+            <li>Once the timer hits 00:00, the exam will auto-submit.</li>
+        </ul>
+        <button onclick="startCountdown()" style="width: 100%;">I am Ready - Start Exam</button>
+    </div>
+
+    <!-- 3. COUNTDOWN OVERLAY -->
+    <div id="countdownOverlay">3</div>
+
+    <!-- 4. EXAM SCREEN -->
     <div id="examSection">
         <div class="exam-layout">
-            <!-- Left Panel -->
             <div class="left-panel">
                 <div class="header-bar">
                     <span id="studentNameDisplay">Student</span>
@@ -135,10 +138,7 @@
                 
                 <h4 style="color: #666; margin-top: 0;">Question <span id="currentQNum">1</span> of <span id="totalQNum">30</span></h4>
                 
-                <div class="math-container" id="mathDisplay">
-                    <!-- Numbers inject here -->
-                </div>
-
+                <div class="math-container" id="mathDisplay"></div>
                 <input type="number" id="answerInput" placeholder="Your Answer">
                 
                 <div class="nav-buttons">
@@ -147,12 +147,9 @@
                 </div>
             </div>
 
-            <!-- Right Panel -->
             <div class="right-panel">
                 <h3>Question Palette</h3>
-                <div class="grid-container" id="qGrid">
-                    <!-- Grid buttons inject here -->
-                </div>
+                <div class="grid-container" id="qGrid"></div>
                 <button class="submit-btn" onclick="submitExam()">Submit Exam</button>
             </div>
         </div>
@@ -190,7 +187,11 @@
                     
                     if(qData.success && qData.questions.length > 0) {
                         questions = qData.questions;
-                        startExam();
+                        
+                        // Hide Login, Show Instructions
+                        document.getElementById('loginSection').style.display = "none";
+                        document.getElementById('instructionSection').style.display = "block";
+                        
                     } else {
                         msgBox.style.color = "red"; msgBox.innerText = "No questions found for your level!";
                         loginBtn.disabled = false;
@@ -205,15 +206,35 @@
             }
         }
 
+        function startCountdown() {
+            document.getElementById('instructionSection').style.display = "none";
+            const countdownEl = document.getElementById('countdownOverlay');
+            countdownEl.style.display = "flex";
+            
+            let count = 3;
+            countdownEl.innerText = count;
+            
+            let countInterval = setInterval(() => {
+                count--;
+                if(count > 0) {
+                    countdownEl.innerText = count;
+                } else if(count === 0) {
+                    countdownEl.innerText = "GO!";
+                } else {
+                    clearInterval(countInterval);
+                    countdownEl.style.display = "none";
+                    startExam();
+                }
+            }, 1000);
+        }
+
         function startExam() {
-            document.getElementById('loginSection').style.display = "none";
             document.getElementById('examSection').style.display = "block";
             document.getElementById('studentNameDisplay').innerText = studentData.name;
             document.getElementById('totalQNum').innerText = questions.length;
             
             buildGrid();
             loadQuestion(0);
-            
             timerInterval = setInterval(updateTimer, 1000);
         }
 
@@ -270,7 +291,7 @@
             if(currentIndex < questions.length - 1) {
                 loadQuestion(currentIndex + 1);
             } else {
-                updateGridUI(); // Update UI even if at the end
+                updateGridUI();
             }
         }
 
