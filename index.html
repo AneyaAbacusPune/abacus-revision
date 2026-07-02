@@ -8,6 +8,9 @@
         body {
             background-color: #165430; font-family: 'Arial', sans-serif; margin: 0;
             display: flex; justify-content: center; align-items: center; min-height: 100vh; color: #333;
+            /* Anti-Cheat: Prevents selecting text */
+            user-select: none; 
+            -webkit-user-select: none;
         }
         .card {
             background-color: #ffffff; padding: 30px; border-radius: 12px;
@@ -68,14 +71,20 @@
         }
         .timer { font-size: 20px; font-weight: bold; color: #f36621; }
         
-        /* Fixed Centered Math Container */
+        /* UPDATED MATH ALIGNMENT: Tabular-nums keeps columns perfectly straight */
         .math-container {
-            font-size: 32px; font-family: monospace; font-weight: bold; 
+            font-size: 36px; font-family: 'Courier New', monospace; font-weight: bold; 
+            font-variant-numeric: tabular-nums; 
             display: flex; flex-direction: column; align-items: center; 
-            width: 100%; margin: 0 auto 30px auto; line-height: 1.5;
+            width: 100%; margin: 0 auto 30px auto; line-height: 1.6;
         }
-        .math-aligner { display: inline-flex; flex-direction: column; align-items: flex-end; }
-        .math-line { border-top: 4px solid #333; width: 100%; margin-top: 5px; margin-bottom: 15px; }
+        .math-aligner { 
+            display: flex; flex-direction: column; align-items: flex-end; 
+            width: 150px; 
+        }
+        .math-aligner div {
+            text-align: right; width: 100%; letter-spacing: 2px;
+        }
         
         .nav-buttons { display: flex; justify-content: space-between; gap: 15px; }
         .nav-buttons button { width: 48%; background-color: #333; }
@@ -89,9 +98,7 @@
         .grid-btn.answered { background-color: #165430; color: white; border-color: #165430; }
         .grid-btn.current { border-color: #f36621; font-weight: bold; box-shadow: 0 0 5px rgba(243,102,33,0.5); }
         
-        /* Submit Exam Button is now Orange */
         .submit-btn { background-color: #f36621; width: 100%; margin-top: auto; }
-        
         .score-display { font-size: 48px; font-weight: bold; color: #f36621; margin: 20px 0; }
         
         @media (max-width: 768px) {
@@ -100,9 +107,8 @@
         }
     </style>
 </head>
-<body>
+<body oncontextmenu="return false;" oncopy="return false;" onpaste="return false;">
 
-    <!-- LOGIN SCREEN -->
     <div id="loginSection" class="card">
         <h2>Aneya Abacus & Vedic Math Centre<br><span style="font-size: 18px; color: #f36621;">Katraj, Pune</span></h2>
         <input type="number" id="mobileInput" placeholder="Mobile Number">
@@ -123,7 +129,6 @@
         <p id="message" style="color: red; margin-top: 15px; display: none;"></p>
     </div>
 
-    <!-- INSTRUCTIONS -->
     <div id="instructionSection" class="card">
         <h2>Welcome, <span id="welcomeName" style="color: #f36621;">Student</span>!</h2>
         <ul class="instructions-list">
@@ -143,10 +148,8 @@
         <p id="instMsg" style="color: red; margin-top: 15px; display: none;"></p>
     </div>
 
-    <!-- OVERLAYS -->
     <div id="countdownOverlay">3</div>
     
-    <!-- Submit Confirmation Modal -->
     <div id="submitModal" class="modal-overlay">
         <div class="modal-content">
             <h3 style="margin-top: 0;">Are you sure you want to submit the exam?</h3>
@@ -158,7 +161,6 @@
         </div>
     </div>
 
-    <!-- EXAM INTERFACE -->
     <div id="examSection">
         <div class="exam-layout">
             <div class="left-panel">
@@ -168,12 +170,10 @@
                 </div>
                 <h4 id="currentQInfo">Question 1</h4>
                 <div class="math-container">
-                    <div class="math-aligner">
-                        <div id="mathDisplay"></div>
-                        <div class="math-line"></div>
-                    </div>
+                    <div class="math-aligner" id="mathDisplay">
+                        </div>
                 </div>
-                <input type="number" id="answerInput" placeholder="Your Answer">
+                <input type="number" id="answerInput" placeholder="Your Answer" ondrop="return false;">
                 <div class="nav-buttons">
                     <button onclick="prevQuestion()">Previous</button>
                     <button onclick="nextQuestion()">Save & Next</button>
@@ -187,7 +187,6 @@
         </div>
     </div>
     
-    <!-- RESULTS -->
     <div id="resultSection" class="card">
         <h2>Exam Complete!</h2>
         <p>Your Final Score</p>
@@ -201,7 +200,15 @@
         const SECRETS = "ANEYA_KATRAJ_2026_SECURE";
         
         let studentData = {}, questions = [], currentIndex = 0, answers = {}, timerInterval;
-        let examEndTime = 0; // Absolute time tracking
+        let examEndTime = 0; 
+        let examActive = false;
+
+        // Anti-Cheat: Tab Visibility Tracker
+        document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === 'hidden' && examActive) {
+                alert("WARNING: Please do not switch tabs or minimize the browser during the exam. Your activity is being monitored by the system.");
+            }
+        });
 
         window.onload = function() {
             if(localStorage.getItem('activeExam') === 'true') {
@@ -294,11 +301,12 @@
         }
 
         function startExam(isResuming) {
+            examActive = true;
             document.getElementById('examSection').style.display = "block";
             document.getElementById('studentNameDisplay').innerText = studentData.name;
             
             if(!isResuming) { 
-                examEndTime = Date.now() + (15 * 60 * 1000); // Absolute time: 15 mins from exact start
+                examEndTime = Date.now() + (15 * 60 * 1000); 
                 persistData(); 
             } 
             
@@ -325,10 +333,16 @@
             currentIndex = index;
             document.getElementById('currentQInfo').innerText = `Question ${currentIndex + 1} of ${questions.length}`;
             document.getElementById('answerInput').value = answers[currentIndex] || "";
+            
             let nums = questions[currentIndex].sum.split(',');
-            let html = ""; nums.forEach(n => html += `<div>${n.trim()}</div>`);
+            let html = ""; 
+            nums.forEach(n => {
+                html += `<div>${n.trim()}</div>`;
+            });
             document.getElementById('mathDisplay').innerHTML = html;
-            updateGridUI(); document.getElementById('answerInput').focus();
+            
+            updateGridUI(); 
+            document.getElementById('answerInput').focus();
             persistData(); 
         }
 
@@ -342,18 +356,16 @@
         }
 
         function updateTimer() {
-            // Absolute time calculation (immune to tab switching)
             let timeLeft = Math.max(0, Math.round((examEndTime - Date.now()) / 1000));
             
             let m = Math.floor(timeLeft / 60), s = timeLeft % 60;
             document.getElementById('timerDisplay').innerText = `${m}:${s < 10 ? '0'+s : s}`;
             if(timeLeft <= 0) {
-                closeSubmitModal(); // Ensure modal isn't blocking UI
+                closeSubmitModal(); 
                 gradeExam();
             }
         }
 
-        // Modal Functions
         function showSubmitModal() {
             saveAnswer();
             document.getElementById('submitModal').style.display = "flex";
@@ -363,6 +375,7 @@
         }
 
         async function gradeExam() {
+            examActive = false;
             closeSubmitModal();
             clearInterval(timerInterval);
             
