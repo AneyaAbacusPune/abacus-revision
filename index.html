@@ -36,12 +36,33 @@
             background-color: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 400px; text-align: center;
         }
 
+        /* Floating Proctor Camera */
+        #camera-container {
+            display: none; position: fixed; bottom: 20px; right: 20px;
+            width: 130px; height: 130px; border-radius: 50%; overflow: hidden;
+            border: 4px solid #f36621; box-shadow: 0 8px 20px rgba(0,0,0,0.4); z-index: 1500;
+            background-color: #000;
+        }
+        #webcam {
+            width: 100%; height: 100%; object-fit: cover;
+            transform: scaleX(-1); /* Mirrors the video like a selfie */
+        }
+        .recording-dot {
+            position: absolute; top: 10px; right: 45px; width: 12px; height: 12px;
+            background-color: red; border-radius: 50%;
+            animation: pulse 1.5s infinite; z-index: 1501;
+        }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+        .rec-text {
+            position: absolute; top: 8px; right: 15px; color: white; font-size: 10px; font-weight: bold; z-index: 1501;
+        }
+
         .exam-layout { display: flex; flex-direction: row; }
         .left-panel { flex: 2; padding: 30px; }
         .right-panel { flex: 1; background-color: #f8f9fa; border-left: 2px solid #e0e0e0; padding: 30px; display: flex; flex-direction: column; }
         h2 { color: #165430; margin-bottom: 5px; }
         h3 { margin-top: 0; color: #165430; border-bottom: 2px solid #165430; padding-bottom: 10px; }
-        ul.instructions-list { color: #555; line-height: 1.8; font-size: 16px; margin-bottom: 20px; text-align: left; }
+        ul.instructions-list { color: #555; line-height: 1.8; font-size: 15px; margin-bottom: 20px; text-align: left; }
         
         input, select {
             width: 100%; padding: 12px; margin-bottom: 20px; box-sizing: border-box;
@@ -71,20 +92,14 @@
         }
         .timer { font-size: 20px; font-weight: bold; color: #f36621; }
         
-        /* UPDATED MATH ALIGNMENT: Tabular-nums keeps columns perfectly straight */
+        /* MATH ALIGNMENT: Tabular-nums keeps columns perfectly straight */
         .math-container {
             font-size: 36px; font-family: 'Courier New', monospace; font-weight: bold; 
-            font-variant-numeric: tabular-nums; 
-            display: flex; flex-direction: column; align-items: center; 
-            width: 100%; margin: 0 auto 30px auto; line-height: 1.6;
+            font-variant-numeric: tabular-nums; display: flex; flex-direction: column; 
+            align-items: center; width: 100%; margin: 0 auto 30px auto; line-height: 1.6;
         }
-        .math-aligner { 
-            display: flex; flex-direction: column; align-items: flex-end; 
-            width: 150px; 
-        }
-        .math-aligner div {
-            text-align: right; width: 100%; letter-spacing: 2px;
-        }
+        .math-aligner { display: flex; flex-direction: column; align-items: flex-end; width: 150px; }
+        .math-aligner div { text-align: right; width: 100%; letter-spacing: 2px; }
         
         .nav-buttons { display: flex; justify-content: space-between; gap: 15px; }
         .nav-buttons button { width: 48%; background-color: #333; }
@@ -104,11 +119,23 @@
         @media (max-width: 768px) {
             .exam-layout { flex-direction: column; }
             .right-panel { border-left: none; border-top: 2px solid #e0e0e0; padding: 20px; }
+            #camera-container { width: 90px; height: 90px; bottom: 10px; right: 10px; border-width: 3px; }
+            .recording-dot { right: 35px; top: 6px; width: 8px; height: 8px; }
+            .rec-text { right: 10px; top: 4px; font-size: 8px; }
         }
     </style>
 </head>
+<!-- Anti-Cheat: Blocks Right-Clicking and Copy/Pasting entirely -->
 <body oncontextmenu="return false;" oncopy="return false;" onpaste="return false;">
 
+    <!-- PROCTOR CAMERA OVERLAY -->
+    <div id="camera-container">
+        <div class="recording-dot"></div>
+        <div class="rec-text">REC</div>
+        <video id="webcam" autoplay playsinline muted></video>
+    </div>
+
+    <!-- LOGIN SCREEN -->
     <div id="loginSection" class="card">
         <h2>Aneya Abacus & Vedic Math Centre<br><span style="font-size: 18px; color: #f36621;">Katraj, Pune</span></h2>
         <input type="number" id="mobileInput" placeholder="Mobile Number">
@@ -129,12 +156,13 @@
         <p id="message" style="color: red; margin-top: 15px; display: none;"></p>
     </div>
 
+    <!-- INSTRUCTIONS -->
     <div id="instructionSection" class="card">
         <h2>Welcome, <span id="welcomeName" style="color: #f36621;">Student</span>!</h2>
         <ul class="instructions-list">
             <li>Select your level from the dropdown below.</li>
             <li>You have <b>15 minutes</b> to complete the test.</li>
-            <li>Answered: <b>Green</b> | Unattempted: <b>Grey</b>.</li>
+            <li><b style="color:red;">Proctoring Active:</b> You must allow Camera access. You are being recorded and monitored during this exam.</li>
             <li>Results will be emailed to your parents automatically.</li>
         </ul>
         <select id="levelSelect">
@@ -144,12 +172,14 @@
             <option value="3">Level 3</option><option value="4">Level 4</option><option value="5">Level 5</option>
             <option value="6">Level 6</option><option value="7">Level 7</option><option value="8">Level 8</option>
         </select>
-        <button id="fetchBtn" onclick="fetchAndStart()" style="width: 100%;">Start Exam</button>
+        <button id="fetchBtn" onclick="requestCameraAndStart()" style="width: 100%;">Start Exam</button>
         <p id="instMsg" style="color: red; margin-top: 15px; display: none;"></p>
     </div>
 
+    <!-- OVERLAYS -->
     <div id="countdownOverlay">3</div>
     
+    <!-- Submit Confirmation Modal -->
     <div id="submitModal" class="modal-overlay">
         <div class="modal-content">
             <h3 style="margin-top: 0;">Are you sure you want to submit the exam?</h3>
@@ -161,6 +191,7 @@
         </div>
     </div>
 
+    <!-- EXAM INTERFACE -->
     <div id="examSection">
         <div class="exam-layout">
             <div class="left-panel">
@@ -170,9 +201,9 @@
                 </div>
                 <h4 id="currentQInfo">Question 1</h4>
                 <div class="math-container">
-                    <div class="math-aligner" id="mathDisplay">
-                        </div>
+                    <div class="math-aligner" id="mathDisplay"></div>
                 </div>
+                <!-- Anti-Cheat: Blocks dropping dragged text into the input field -->
                 <input type="number" id="answerInput" placeholder="Your Answer" ondrop="return false;">
                 <div class="nav-buttons">
                     <button onclick="prevQuestion()">Previous</button>
@@ -187,6 +218,7 @@
         </div>
     </div>
     
+    <!-- RESULTS -->
     <div id="resultSection" class="card">
         <h2>Exam Complete!</h2>
         <p>Your Final Score</p>
@@ -202,24 +234,38 @@
         let studentData = {}, questions = [], currentIndex = 0, answers = {}, timerInterval;
         let examEndTime = 0; 
         let examActive = false;
+        let tabSwitches = 0; 
+        let videoStream = null; // Holds the camera feed
 
         // Anti-Cheat: Tab Visibility Tracker
         document.addEventListener("visibilitychange", () => {
             if (document.visibilityState === 'hidden' && examActive) {
-                alert("WARNING: Please do not switch tabs or minimize the browser during the exam. Your activity is being monitored by the system.");
+                tabSwitches++; 
+                persistData(); 
+                alert("SECURITY WARNING: Tab switching detected. Your activity is being logged by the proctoring system.");
             }
         });
 
         window.onload = function() {
             if(localStorage.getItem('activeExam') === 'true') {
-                studentData = JSON.parse(localStorage.getItem('studentData'));
-                questions = JSON.parse(localStorage.getItem('questions'));
-                answers = JSON.parse(localStorage.getItem('answers')) || {};
-                examEndTime = parseInt(localStorage.getItem('examEndTime'));
-                currentIndex = parseInt(localStorage.getItem('currentIndex'));
-                
-                document.getElementById('loginSection').style.display = "none";
-                startExam(true); 
+                // If resuming, force them to give camera permission again before showing exam
+                navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+                    videoStream = stream;
+                    document.getElementById('webcam').srcObject = videoStream;
+                    document.getElementById('camera-container').style.display = "block";
+                    
+                    studentData = JSON.parse(localStorage.getItem('studentData'));
+                    questions = JSON.parse(localStorage.getItem('questions'));
+                    answers = JSON.parse(localStorage.getItem('answers')) || {};
+                    examEndTime = parseInt(localStorage.getItem('examEndTime'));
+                    currentIndex = parseInt(localStorage.getItem('currentIndex'));
+                    tabSwitches = parseInt(localStorage.getItem('tabSwitches')) || 0; 
+                    
+                    document.getElementById('loginSection').style.display = "none";
+                    startExam(true); 
+                }).catch(err => {
+                    alert("Camera access is required to resume your exam. Please refresh and allow the camera.");
+                });
             }
         };
 
@@ -230,6 +276,7 @@
             localStorage.setItem('answers', JSON.stringify(answers));
             localStorage.setItem('examEndTime', examEndTime.toString());
             localStorage.setItem('currentIndex', currentIndex.toString());
+            localStorage.setItem('tabSwitches', tabSwitches.toString()); 
         }
 
         function togglePassword() {
@@ -264,13 +311,32 @@
             } catch(e) { msgBox.style.color="red"; msgBox.innerText = "Connection Error!"; }
         }
 
-        async function fetchAndStart() {
+        // NEW: Request Camera BEFORE fetching questions
+        async function requestCameraAndStart() {
             const level = document.getElementById('levelSelect').value;
             const btn = document.getElementById('fetchBtn');
             const msg = document.getElementById('instMsg');
-            
-            btn.disabled = true; msg.style.display = "block"; msg.style.color = "#165430"; msg.innerText = "Loading questions...";
-            
+
+            btn.disabled = true;
+            msg.style.display = "block";
+            msg.style.color = "#165430";
+            msg.innerText = "Requesting Camera Access...";
+
+            try {
+                videoStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                document.getElementById('webcam').srcObject = videoStream;
+                document.getElementById('camera-container').style.display = "block";
+                
+                fetchQuestions(level, btn, msg);
+            } catch (err) {
+                msg.style.color = "red";
+                msg.innerText = "Permission Denied: Camera access is strictly required to take this proctored exam.";
+                btn.disabled = false;
+            }
+        }
+
+        async function fetchQuestions(level, btn, msg) {
+            msg.innerText = "Loading questions...";
             try {
                 let response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "getQuestions", level: level, apiKey: SECRETS }) });
                 let data = await response.json();
@@ -282,8 +348,20 @@
                 } else {
                     msg.style.color = "red"; msg.innerText = "No questions found for Level " + level;
                     btn.disabled = false;
+                    stopCamera(); // Turn off camera if it fails here
                 }
-            } catch(e) { msg.style.color = "red"; msg.innerText = "Error loading questions!"; btn.disabled = false; }
+            } catch(e) { 
+                msg.style.color = "red"; msg.innerText = "Error loading questions!"; 
+                btn.disabled = false; 
+                stopCamera();
+            }
+        }
+
+        function stopCamera() {
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+                document.getElementById('camera-container').style.display = "none";
+            }
         }
 
         function startCountdown() {
@@ -307,6 +385,7 @@
             
             if(!isResuming) { 
                 examEndTime = Date.now() + (15 * 60 * 1000); 
+                tabSwitches = 0; 
                 persistData(); 
             } 
             
@@ -376,6 +455,7 @@
 
         async function gradeExam() {
             examActive = false;
+            stopCamera(); // Turn off camera upon submission
             closeSubmitModal();
             clearInterval(timerInterval);
             
@@ -401,7 +481,8 @@
                         level: studentData.chosenLevel,
                         score: score,
                         total: questions.length,
-                        apiKey: SECRETS
+                        apiKey: SECRETS,
+                        tabSwitches: tabSwitches 
                     }) 
                 });
             } catch(e) { console.log("Submission network hiccup, showing local score."); }
@@ -413,6 +494,7 @@
         }
 
         function clearAndHome() {
+            stopCamera();
             localStorage.clear();
             location.reload();
         }
