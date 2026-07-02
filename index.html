@@ -42,11 +42,14 @@
             border: 2px solid #e0e0e0; border-radius: 8px; font-size: 18px; text-align: center;
         }
 
-        /* Password Wrapper for Eye Icon */
+        /* Password Wrapper for SVG Eye Icon */
         .password-container { position: relative; width: 100%; }
         .eye-icon {
-            position: absolute; right: 15px; top: 12px; font-size: 20px; cursor: pointer; color: #666; user-select: none;
+            position: absolute; right: 15px; top: 12px; cursor: pointer; color: #888;
+            display: flex; align-items: center; justify-content: center; height: 24px; width: 24px;
         }
+        .eye-icon svg { width: 20px; height: 20px; stroke: #888; transition: stroke 0.2s; }
+        .eye-icon:hover svg { stroke: #333; }
         
         button {
             background-color: #f36621; color: white; border: none; padding: 14px; 
@@ -61,7 +64,7 @@
         }
         .timer { font-size: 20px; font-weight: bold; color: #f36621; }
         
-        /* Updated Math Container for Centering */
+        /* Centered Math Container */
         .math-container {
             font-size: 32px; font-family: monospace; font-weight: bold; display: flex; flex-direction: column;
             align-items: center; width: 100%; margin: 0 auto 30px auto; line-height: 1.5;
@@ -92,19 +95,32 @@
 </head>
 <body>
 
+    <!-- PAGE 1: LOGIN -->
     <div id="loginSection" class="card">
         <h2>Aneya Abacus<br><span style="font-size: 18px; color: #f36621;">Katraj, Pune</span></h2>
         <input type="number" id="mobileInput" placeholder="Mobile Number">
         
         <div class="password-container">
             <input type="password" id="passwordInput" placeholder="Password">
-            <span class="eye-icon" onclick="togglePassword()">👁️</span>
+            <span class="eye-icon" onclick="togglePassword()" id="eyeIconWrapper">
+                <!-- Eye Closed SVG (Default) -->
+                <svg id="eyeClosed" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                </svg>
+                <!-- Eye Open SVG (Hidden by default) -->
+                <svg id="eyeOpen" style="display: none;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+            </span>
         </div>
         
         <button id="loginBtn" onclick="login()" style="width: 100%;">Login</button>
         <p id="message" style="color: red; margin-top: 15px; display: none;"></p>
     </div>
 
+    <!-- PAGE 2: INSTRUCTIONS -->
     <div id="instructionSection" class="card">
         <h2>Welcome, <span id="welcomeName" style="color: #f36621;">Student</span>!</h2>
         <ul class="instructions-list">
@@ -130,8 +146,10 @@
         <p id="instMsg" style="color: red; margin-top: 15px; display: none;"></p>
     </div>
 
+    <!-- PAGE 3: COUNTDOWN -->
     <div id="countdownOverlay">3</div>
 
+    <!-- PAGE 4: EXAM INTERFACE -->
     <div id="examSection">
         <div class="exam-layout">
             <div class="left-panel">
@@ -160,6 +178,7 @@
         </div>
     </div>
     
+    <!-- PAGE 5: RESULTS -->
     <div id="resultSection" class="card">
         <h2>Exam Complete!</h2>
         <p>Your Final Score</p>
@@ -174,8 +193,18 @@
 
         function togglePassword() {
             const pwd = document.getElementById("passwordInput");
-            if (pwd.type === "password") { pwd.type = "text"; } 
-            else { pwd.type = "password"; }
+            const eyeClosed = document.getElementById("eyeClosed");
+            const eyeOpen = document.getElementById("eyeOpen");
+            
+            if (pwd.type === "password") { 
+                pwd.type = "text"; 
+                eyeClosed.style.display = "none";
+                eyeOpen.style.display = "block";
+            } else { 
+                pwd.type = "password"; 
+                eyeClosed.style.display = "block";
+                eyeOpen.style.display = "none";
+            }
         }
 
         async function login() {
