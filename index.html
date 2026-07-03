@@ -49,11 +49,9 @@
         .right-panel { flex: 1; background-color: #f8f9fa; border-left: 2px solid #e0e0e0; padding: 30px; display: flex; flex-direction: column; }
         h2 { color: #165430; margin-bottom: 5px; }
         h3 { margin-top: 0; color: #165430; border-bottom: 2px solid #165430; padding-bottom: 10px; }
-        ul.instructions-list { color: #555; line-height: 1.8; font-size: 15px; margin-bottom: 20px; text-align: left; }
+        ul.instructions-list { color: #555; line-height: 1.6; font-size: 14px; margin-bottom: 20px; text-align: left; }
         
         input, select { width: 100%; padding: 12px; margin-bottom: 20px; box-sizing: border-box; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 18px; text-align: center; }
-        
-        /* Updated Password SVG Icon Styling */
         .password-container { position: relative; width: 100%; }
         .eye-icon { position: absolute; right: 15px; top: 12px; cursor: pointer; color: #888; display: flex; align-items: center; justify-content: center; height: 24px; width: 24px; }
         .eye-icon svg { width: 20px; height: 20px; stroke: #888; transition: stroke 0.2s; }
@@ -140,9 +138,10 @@
     <div id="instructionSection" class="card">
         <h2>Welcome, <span id="welcomeName" style="color: #f36621;">Student</span>!</h2>
         <ul class="instructions-list">
-            <li>Select your level from the dropdown below.</li>
-            <li>You have <b>15 minutes</b> to complete the test.</li>
-            <li><b style="color:red;">Proctoring Active:</b> Camera access is required. Covering the lens will freeze the exam.</li>
+            <li><b>Duration:</b> You have a strict <b>15-minute</b> time limit to complete the 30-question assessment.</li>
+            <li><b>Tracking:</b> Use the Question Palette to navigate. Answered questions will turn <b>Green</b>, while unattempted remain <b>Grey</b>.</li>
+            <li><b style="color:red;">Academic Integrity:</b> This exam is strictly proctored. Camera access is mandatory. Any attempt to switch tabs, minimize the browser, or obstruct the lens (with any object) will instantly freeze your exam and flag a security violation.</li>
+            <li><b>Submission:</b> Final results will be automatically logged and emailed to your registered parent/guardian.</li>
         </ul>
         <select id="levelSelect">
             <option value="Jr">Junior (Jr)</option><option value="Sr">Senior (Sr)</option>
@@ -176,8 +175,8 @@
 
     <div id="submitModal" class="modal-overlay">
         <div class="modal-content">
-            <h3 style="margin-top: 0;">Submit Exam?</h3>
-            <p style="color: #555;">You cannot change answers after submission.</p>
+            <h3 style="margin-top: 0; color: #165430;">Confirm Submission</h3>
+            <p style="color: #555; font-size: 15px; line-height: 1.5;">Are you sure you want to finalize and submit your assessment? Once submitted, your answers will be locked and cannot be modified.</p>
             <div style="display: flex; gap: 15px; justify-content: center; margin-top: 25px;">
                 <button onclick="closeSubmitModal()" style="background-color: #fff; color: #333; border: 2px solid #ccc; width: 45%;">No</button>
                 <button onclick="gradeExam()" style="background-color: #165430; width: 45%;">Yes, Submit</button>
@@ -361,9 +360,6 @@
             securityInterval = setInterval(checkCameraSecurity, 2000);
         }
 
-        // ==========================================
-        // NEW PIXEL VARIANCE ALGORITHM (FINGER BLOCK DETECTION)
-        // ==========================================
         function checkCameraSecurity() {
             if (!examActive || !videoStream) return;
             const videoEl = document.getElementById('webcam'), track = videoStream.getVideoTracks()[0];
@@ -391,13 +387,12 @@
                     
                     let avgBright = totalBright / 2500;
                     
-                    // Variance measures contrast/detail. Finger cover = 0 detail.
                     let diffSum = 0;
                     for(let i=0; i<pixels.length; i++) diffSum += Math.abs(pixels[i] - avgBright);
                     let variance = diffSum / 2500;
 
-                    // If it is pitch black (<15) OR it lacks any detail/variance like a finger cover (<5)
-                    if (avgBright < 15 || variance < 5) isBlocked = true; 
+                    // UPDATED: Increased threshold to catch light-colored solid objects
+                    if (avgBright < 15 || variance < 12) isBlocked = true; 
                 } catch(e) {}
             }
 
