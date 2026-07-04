@@ -225,7 +225,48 @@
         let examEndTime = 0, examActive = false, tabSwitches = 0, videoStream = null; 
         let progressChartInstance = null;
 
-        // RESTORED WARNING POPUP
+        // --- NEW: STATE PERSISTENCE LAYER ---
+        function persistData() {
+            localStorage.setItem('examState', JSON.stringify({
+                studentData, questions, currentIndex, answers, examEndTime, tabSwitches, examActive
+            }));
+        }
+
+        window.onload = function() {
+            const savedState = localStorage.getItem('examState');
+            if(savedState) {
+                const state = JSON.parse(savedState);
+                studentData = state.studentData; 
+                questions = state.questions; 
+                currentIndex = state.currentIndex; 
+                answers = state.answers; 
+                examEndTime = state.examEndTime; 
+                tabSwitches = state.tabSwitches;
+                
+                if(state.examActive) {
+                    examActive = true;
+                    document.getElementById('loginSection').style.display = "none";
+                    document.getElementById('instructionSection').style.display = "none";
+                    
+                    navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }).then(stream => {
+                        videoStream = stream;
+                        document.getElementById('webcam').srcObject = videoStream;
+                        document.getElementById('camera-container').style.display = "block";
+                        
+                        document.getElementById('examSection').style.display = "block";
+                        document.getElementById('studentNameDisplay').innerText = studentData.name;
+                        
+                        buildGrid(); 
+                        loadQuestion(currentIndex);
+                        timerInterval = setInterval(updateTimer, 1000);
+                        securityInterval = setInterval(checkCameraSecurity, 2000);
+                    }).catch(() => {
+                        alert("Camera permission is required to resume your exam. Please allow it and refresh.");
+                    });
+                }
+            }
+        };
+
         document.addEventListener("visibilitychange", () => {
             if (document.visibilityState === 'hidden' && examActive) {
                 tabSwitches++; persistData(); 
@@ -349,15 +390,19 @@
                 count--;
                 if(count > 0) cEl.innerText = count;
                 else if(count === 0) cEl.innerText = "GO!";
-                else { clearInterval(interval); cEl.style.display = "none"; startExam(); }
+                else { clearInterval(interval); cEl.style.display = "none"; startExam(false); }
             }, 1000);
         }
 
-        function startExam() {
+        function startExam(isResuming = false) {
             examActive = true; document.getElementById('examSection').style.display = "block";
             document.getElementById('studentNameDisplay').innerText = studentData.name;
-            examEndTime = Date.now() + (15 * 60 * 1000); tabSwitches = 0; persistData(); 
-            buildGrid(); loadQuestion(0);
+            
+            if(!isResuming) {
+                examEndTime = Date.now() + (15 * 60 * 1000); tabSwitches = 0; persistData(); 
+            }
+            
+            buildGrid(); loadQuestion(currentIndex);
             timerInterval = setInterval(updateTimer, 1000);
             securityInterval = setInterval(checkCameraSecurity, 2000);
         }
@@ -436,7 +481,6 @@
         function nextQuestion() { saveAnswer(); if(currentIndex < questions.length - 1) loadQuestion(currentIndex + 1); else updateGridUI(); }
         function prevQuestion() { saveAnswer(); if(currentIndex > 0) loadQuestion(currentIndex - 1); else updateGridUI(); }
         function saveAnswer() { answers[currentIndex] = document.getElementById('answerInput').value; persistData(); }
-        function persistData() { localStorage.setItem('ans', JSON.stringify(answers)); }
 
         function updateTimer() {
             let timeLeft = Math.max(0, Math.round((examEndTime - Date.now()) / 1000));
@@ -466,12 +510,12 @@
                 });
             } catch(e) {}
             
-            localStorage.clear();
+            localStorage.removeItem('examState'); // Clear persisted state upon successful grading
             document.getElementById('countdownOverlay').style.display = "none"; document.getElementById('resultSection').style.display = "block";
             document.getElementById('finalScoreDisplay').innerText = score + " / " + questions.length;
         }
 
-        function clearAndHome() { stopCamera(); localStorage.clear(); location.reload(); }
+        function clearAndHome() { stopCamera(); localStorage.removeItem('examState'); location.reload(); }
     </script>
 </body>
 </html>
