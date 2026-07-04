@@ -200,7 +200,7 @@
                 </div>
             </div>
             <div class="right-panel">
-                <h3>Question Palette</h3>
+                <h3>Question Palette <span id="examLevelDisplay" style="color: #f36621; float: right; font-size: 16px;"></span></h3>
                 <div class="grid-container" id="qGrid"></div>
                 <button id="submitExamBtn" class="submit-btn" onclick="showSubmitModal()">Submit Exam</button>
             </div>
@@ -208,7 +208,8 @@
     </div>
     
     <div id="resultSection" class="card">
-        <h2>Exam Complete!</h2>
+        <h3 id="resultLevelDisplay" style="color: #f36621; margin-top: 0; margin-bottom: 5px; border: none; padding: 0;"></h3>
+        <h2 style="margin-top: 0;">Exam Complete!</h2>
         <div class="score-display" id="finalScoreDisplay">0 / 30</div>
         <p style="color: #165430; font-weight: bold;">An email has been sent to your parents!</p>
         <button onclick="clearAndHome()" style="background-color: #f36621; width: 100%; margin-top: 15px;">Return to Home</button>
@@ -225,7 +226,6 @@
         let examEndTime = 0, examActive = false, tabSwitches = 0, videoStream = null; 
         let progressChartInstance = null;
 
-        // --- NEW: STATE PERSISTENCE LAYER ---
         function persistData() {
             localStorage.setItem('examState', JSON.stringify({
                 studentData, questions, currentIndex, answers, examEndTime, tabSwitches, examActive
@@ -255,6 +255,8 @@
                         
                         document.getElementById('examSection').style.display = "block";
                         document.getElementById('studentNameDisplay').innerText = studentData.name;
+                        // UPDATED: Restore Level Display
+                        document.getElementById('examLevelDisplay').innerText = "Level " + studentData.chosenLevel;
                         
                         buildGrid(); 
                         loadQuestion(currentIndex);
@@ -397,6 +399,8 @@
         function startExam(isResuming = false) {
             examActive = true; document.getElementById('examSection').style.display = "block";
             document.getElementById('studentNameDisplay').innerText = studentData.name;
+            // UPDATED: Show Level Display
+            document.getElementById('examLevelDisplay').innerText = "Level " + studentData.chosenLevel;
             
             if(!isResuming) {
                 examEndTime = Date.now() + (15 * 60 * 1000); tabSwitches = 0; persistData(); 
@@ -510,8 +514,11 @@
                 });
             } catch(e) {}
             
-            localStorage.removeItem('examState'); // Clear persisted state upon successful grading
-            document.getElementById('countdownOverlay').style.display = "none"; document.getElementById('resultSection').style.display = "block";
+            localStorage.removeItem('examState'); 
+            document.getElementById('countdownOverlay').style.display = "none"; 
+            document.getElementById('resultSection').style.display = "block";
+            // UPDATED: Show Level Display on Result Page
+            document.getElementById('resultLevelDisplay').innerText = "Level " + studentData.chosenLevel;
             document.getElementById('finalScoreDisplay').innerText = score + " / " + questions.length;
         }
 
