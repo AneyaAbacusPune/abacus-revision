@@ -68,15 +68,23 @@
         .math-aligner div { text-align: right; width: 100%; letter-spacing: 2px; }
         
         /* MCQ Grid Styling */
-        .mcq-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; max-width: 300px; margin: 0 auto 30px auto; }
+        .mcq-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; max-width: 300px; margin: 0 auto 25px auto; }
         .mcq-btn { background: #f8f9fa; border: 2px solid #e0e0e0; padding: 15px; border-radius: 12px; font-size: 22px; font-weight: bold; cursor: pointer; transition: 0.2s; color: #333; }
         .mcq-btn:hover { border-color: #f36621; }
         .mcq-btn.selected { background: #f36621; color: white; border-color: #f36621; }
 
+        /* Navigation Buttons Styling */
+        .nav-buttons { display: flex; justify-content: space-between; gap: 10px; width: 100%; max-width: 400px; margin: 0 auto; }
+        .nav-buttons button { flex: 1; padding: 12px 5px; font-size: 14px; background-color: #555; }
+        .nav-buttons .btn-review { background-color: #9b59b6; } /* Professional Purple for Review */
+
+        /* Palette Grid Styling */
         .grid-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; flex-grow: 1; align-content: start; }
         .grid-btn { background-color: #e0e0e0; color: #555; border: 2px solid #ccc; padding: 10px 0; font-size: 14px; border-radius: 6px; cursor: pointer; }
         .grid-btn.answered { background-color: #165430; color: white; border-color: #165430; }
+        .grid-btn.review { background-color: #9b59b6; color: white; border-color: #9b59b6; }
         .grid-btn.current { border-color: #f36621; font-weight: bold; box-shadow: 0 0 5px rgba(243,102,33,0.5); }
+        
         .submit-btn { background-color: #f36621; width: 100%; margin-top: auto; }
         .score-display { font-size: 48px; font-weight: bold; color: #f36621; margin: 15px 0; }
         
@@ -142,7 +150,7 @@
         <h2>Welcome, <span id="welcomeName" style="color: #f36621;">Student</span>!</h2>
         <ul class="instructions-list">
             <li><b>Duration:</b> You have a strict <b>15-minute</b> time limit to complete the 30-question assessment.</li>
-            <li><b>Tracking:</b> Use the Question Palette to navigate. Answered questions will turn <b>Green</b>, while unattempted remain <b>Grey</b>.</li>
+            <li><b>Tracking:</b> Use the Question Palette to navigate. Answered questions will turn <b>Green</b>. Use "Mark for Review" to flag questions in <b>Purple</b>.</li>
             <li><b style="color:red;">Academic Integrity:</b> This exam is strictly proctored. Camera access is mandatory. Any attempt to switch tabs, minimize the browser, or obstruct the lens (with any object) will instantly freeze your exam and flag a security violation.</li>
             <li><b>Submission:</b> Final results will be automatically logged and emailed to your registered parent/guardian.</li>
         </ul>
@@ -207,6 +215,12 @@
                 
                 <div id="mcqContainer" class="mcq-grid"></div>
 
+                <div class="nav-buttons">
+                    <button onclick="prevQuestion()">Previous</button>
+                    <button id="btnReview" class="btn-review" onclick="toggleReview()">Mark for Review</button>
+                    <button onclick="nextQuestion()">Next</button>
+                </div>
+
             </div>
             <div class="right-panel">
                 <h3>Question Palette <span id="examLevelDisplay" style="color: #f36621; float: right; font-size: 16px;"></span></h3>
@@ -232,13 +246,13 @@
         const API_URL = "https://script.google.com/macros/s/AKfycbynaiUC4KCIubk1EasL70xVD2iPUmQcVOMd7ANp1W69dIGW0AQFkDgA3nYap2lVuSw-/exec";
         const SECRETS = "ANEYA_KATRAJ_2026_SECURE";
         
-        let studentData = {}, questions = [], currentIndex = 0, answers = {};
+        let studentData = {}, questions = [], currentIndex = 0, answers = {}, reviewState = {};
         let timerInterval, securityInterval, examEndTime = 0, examStartTime = 0;
         let examActive = false, tabSwitches = 0, videoStream = null, progressChartInstance = null;
 
         function persistData() {
             localStorage.setItem('examState', JSON.stringify({
-                studentData, questions, currentIndex, answers, examEndTime, examStartTime, tabSwitches, examActive
+                studentData, questions, currentIndex, answers, reviewState, examEndTime, examStartTime, tabSwitches, examActive
             }));
         }
 
@@ -247,8 +261,8 @@
             if(savedState) {
                 const state = JSON.parse(savedState);
                 studentData = state.studentData; questions = state.questions; currentIndex = state.currentIndex; 
-                answers = state.answers; examEndTime = state.examEndTime; examStartTime = state.examStartTime;
-                tabSwitches = state.tabSwitches;
+                answers = state.answers; reviewState = state.reviewState || {}; examEndTime = state.examEndTime; 
+                examStartTime = state.examStartTime; tabSwitches = state.tabSwitches;
                 
                 if(state.examActive) {
                     examActive = true;
@@ -348,40 +362,31 @@
             } catch(e) { document.getElementById('historyData').innerHTML = "<p style='color:red;'>Error loading data.</p>"; }
         }
 
-        // ==========================================
-        // NEW ABACUS-SPECIFIC OPTION GENERATOR
-        // ==========================================
+        // Generate options with Abacus logic
         function generateOptions(correctAnswer) {
             let options = new Set();
             let correct = Number(correctAnswer);
             options.add(correct);
             
-            // Abacus specific errors: off by 1, off by 5, off by 10, off by 2
             let possibleOffsets = [1, -1, 5, -5, 10, -10, 2, -2];
             possibleOffsets.sort(function() { return Math.random() - 0.5; });
             
             for (let i = 0; i < possibleOffsets.length; i++) {
                 if (options.size === 4) break;
                 let fakeAns = correct + possibleOffsets[i];
-                // Don't give away the answer by showing obvious negative numbers if correct is positive
                 if (correct >= 0 && fakeAns < 0) continue;
                 options.add(fakeAns);
             }
             
-            // Fallback just in case
             let fallback = 1;
             while(options.size < 4) {
-                if (correct >= 0) {
-                    options.add(correct + fallback);
-                } else {
-                    options.add(correct - fallback);
-                }
+                if (correct >= 0) options.add(correct + fallback);
+                else options.add(correct - fallback);
                 fallback++;
             }
             
             return Array.from(options).sort(function() { return Math.random() - 0.5; });
         }
-        // ==========================================
 
         async function requestCameraAndStart() {
             const level = document.getElementById('levelSelect').value;
@@ -433,7 +438,7 @@
             
             if(!isResuming) {
                 examStartTime = Date.now(); 
-                examEndTime = Date.now() + (15 * 60 * 1000); tabSwitches = 0; persistData(); 
+                examEndTime = Date.now() + (15 * 60 * 1000); tabSwitches = 0; reviewState = {}; persistData(); 
             }
             
             buildGrid(); loadQuestion(currentIndex);
@@ -476,6 +481,7 @@
             for(let i=0; i<questions.length; i++) {
                 let btn = document.getElementById(`btn-q${i}`); btn.className = "grid-btn";
                 if(answers[i] !== undefined) btn.classList.add('answered');
+                if(reviewState[i]) btn.classList.add('review'); // Purple overrides Green
                 if(i === currentIndex) btn.classList.add('current');
             }
         }
@@ -492,7 +498,16 @@
             });
             document.getElementById('mcqContainer').innerHTML = mcqHtml;
             
+            // Update Review Button Text
+            document.getElementById('btnReview').innerText = reviewState[index] ? "Unmark" : "Mark for Review";
+            
             updateGridUI(); persistData();
+        }
+
+        function toggleReview() {
+            reviewState[currentIndex] = !reviewState[currentIndex];
+            persistData();
+            loadQuestion(currentIndex); 
         }
 
         function selectOption(val) {
@@ -505,6 +520,8 @@
         }
 
         function jumpToQuestion(i) { loadQuestion(i); }
+        function prevQuestion() { if(currentIndex > 0) loadQuestion(currentIndex - 1); }
+        function nextQuestion() { if(currentIndex < questions.length - 1) loadQuestion(currentIndex + 1); }
 
         function updateTimer() {
             let timeLeft = Math.max(0, Math.round((examEndTime - Date.now()) / 1000));
