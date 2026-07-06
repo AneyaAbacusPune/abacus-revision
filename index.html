@@ -3,157 +3,278 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aneya Abacus Katraj | Portal</title>
+    <title>Aneya Abacus Katraj, Pune | Daily Revision</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { background-color: #165430; font-family: 'Arial', sans-serif; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; color: #333; user-select: none; -webkit-user-select: none; }
-        .card { background-color: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); text-align: center; width: 90%; max-width: 450px; }
-        .wide-card { max-width: 800px; width: 95%; display: none; background-color: #ffffff; padding: 30px; border-radius: 12px; }
+        body {
+            background-color: #165430; font-family: 'Arial', sans-serif; margin: 0;
+            display: flex; justify-content: center; align-items: center; min-height: 100vh; color: #333;
+            user-select: none; -webkit-user-select: none;
+        }
+        .card {
+            background-color: #ffffff; padding: 30px; border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3); text-align: center; width: 90%; max-width: 450px;
+        }
+        #examSection {
+            display: none; background-color: #ffffff; border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3); width: 95%; max-width: 1000px; overflow: hidden;
+            transition: filter 0.3s;
+        }
+        #instructionSection, #resultSection { display: none; width: 90%; max-width: 500px; }
+        #dashboardSection, #leaderboardSection { display: none; width: 95%; max-width: 800px; background-color: #fff; padding: 30px; border-radius: 12px; }
         
-        /* Profile Hub Styles */
-        .profile-header { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #e0e0e0; padding-bottom: 20px; margin-bottom: 20px; }
-        .avatar-circle { width: 80px; height: 80px; background: #f8f9fa; border: 3px solid #f36621; border-radius: 50%; overflow: hidden; cursor: pointer; }
-        .avatar-circle img { width: 100%; height: 100%; object-fit: cover; }
-        .profile-info { text-align: left; flex-grow: 1; margin-left: 15px; }
-        .profile-name { font-size: 22px; font-weight: bold; color: #165430; margin: 0; }
-        .profile-level { font-size: 14px; color: #555; background: #e0e0e0; padding: 3px 8px; border-radius: 12px; display: inline-block; margin-top: 5px; font-weight: bold;}
-        .streak-box { text-align: center; background: #fff3ed; border: 2px solid #f36621; border-radius: 12px; padding: 10px; }
-        .streak-num { font-size: 24px; font-weight: bold; color: #f36621; margin: 0; }
-        
-        /* Navigation Grid */
-        .nav-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .nav-btn { background: #165430; color: white; border: none; padding: 15px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .nav-btn.orange { background: #f36621; }
-        .nav-btn.greyed-out { opacity: 0.5; pointer-events: none; background: #555; }
+        #countdownOverlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #165430; color: #f36621; font-size: 150px; font-weight: bold;
+            justify-content: center; align-items: center; z-index: 1000;
+        }
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.9); z-index: 2000; justify-content: center; align-items: center;
+        }
+        .modal-content { background-color: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 400px; text-align: center; }
 
-        /* Leaderboard Styles */
+        #camera-container {
+            display: none; position: fixed; bottom: 20px; right: 20px;
+            width: 130px; height: 130px; border-radius: 50%; overflow: hidden;
+            border: 4px solid #f36621; box-shadow: 0 8px 20px rgba(0,0,0,0.4); z-index: 1500; background-color: #000;
+        }
+        #webcam { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+        .recording-dot { position: absolute; top: 10px; right: 45px; width: 12px; height: 12px; background-color: red; border-radius: 50%; animation: pulse 1.5s infinite; z-index: 1501; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+        .rec-text { position: absolute; top: 8px; right: 15px; color: white; font-size: 10px; font-weight: bold; z-index: 1501; }
+
+        /* Original Layout Elements */
+        .exam-layout { display: flex; flex-direction: row; }
+        .left-panel { flex: 2; padding: 30px; }
+        .right-panel { flex: 1; background-color: #f8f9fa; border-left: 2px solid #e0e0e0; padding: 30px; display: flex; flex-direction: column; }
+        h2 { color: #165430; margin-bottom: 5px; }
+        h3 { margin-top: 0; color: #165430; border-bottom: 2px solid #165430; padding-bottom: 10px; }
+        ul.instructions-list { color: #555; line-height: 1.6; font-size: 14px; margin-bottom: 20px; text-align: left; }
+        
+        input, select { width: 100%; padding: 12px; margin-bottom: 20px; box-sizing: border-box; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 18px; text-align: center; }
+        .password-container { position: relative; width: 100%; }
+        .eye-icon { position: absolute; right: 15px; top: 12px; cursor: pointer; color: #888; display: flex; align-items: center; justify-content: center; height: 24px; width: 24px; }
+        .eye-icon svg { width: 20px; height: 20px; stroke: #888; transition: stroke 0.2s; }
+        .eye-icon:hover svg { stroke: #333; }
+        
+        button { border: none; padding: 14px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; color: white; }
+        button:disabled { background-color: #ccc !important; cursor: not-allowed; }
+        
+        .header-bar { display: flex; justify-content: space-between; align-items: center; background-color: #165430; color: white; padding: 10px 20px; border-radius: 8px; margin-bottom: 20px; }
+        .timer { font-size: 20px; font-weight: bold; color: #f36621; }
+        
+        .math-container { font-size: 36px; font-family: 'Courier New', monospace; font-weight: bold; font-variant-numeric: tabular-nums; display: flex; flex-direction: column; align-items: center; width: 100%; margin: 0 auto 30px auto; line-height: 1.6; }
+        .math-aligner { display: flex; flex-direction: column; align-items: flex-end; width: 150px; }
+        .math-aligner div { text-align: right; width: 100%; letter-spacing: 2px; }
+        
+        /* Nav & Dashboard */
+        .dashboard-grid { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 20px; }
+        .chart-container { flex: 2; min-width: 300px; border: 1px solid #eee; border-radius: 8px; padding: 15px; background: #fdfdfd; }
+        .history-list { flex: 1; min-width: 250px; max-height: 400px; overflow-y: auto; text-align: left; border: 1px solid #eee; border-radius: 8px; padding: 10px; }
+        .history-item { background: #f8f9fa; padding: 12px; border-bottom: 1px solid #ddd; border-radius: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .score-badge { background: #165430; color: white; padding: 5px 10px; border-radius: 20px; font-weight: bold; font-size: 14px;}
+        .cheat-badge { background: #fc0202; color: white; padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: bold; margin-top: 5px; display: inline-block;}
+        .hub-btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+
+        /* Leaderboard Specifics */
         .lb-row { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee; text-align: left; background: #fdfdfd; margin-bottom: 5px; border-radius: 6px; }
         .lb-rank { font-weight: bold; font-size: 18px; width: 30px; }
         .lb-name { flex-grow: 1; font-weight: bold; color: #333; }
         .lb-stats { text-align: right; font-size: 14px; color: #666; }
         .warning-tag { background: #fc0202; color: white; padding: 2px 6px; border-radius: 8px; font-size: 11px; font-weight: bold; margin-left: 10px; }
-        
-        /* Metallic Tags */
         .rank-1 { background: linear-gradient(45deg, #ffd700, #ffdf00, #d4af37); color: #000; border: 1px solid #b8860b; box-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
         .rank-2 { background: linear-gradient(45deg, #e0e0e0, #f8f9fa, #c0c0c0); color: #000; border: 1px solid #a9a9a9; }
         .rank-3 { background: linear-gradient(45deg, #cd7f32, #d2691e, #8b4513); color: white; border: 1px solid #8b4513; }
 
-        /* General Inputs & Buttons */
-        input, select { width: 100%; padding: 12px; margin-bottom: 15px; box-sizing: border-box; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 16px; text-align: center; }
-        .btn-full { width: 100%; background: #f36621; color: white; border: none; padding: 15px; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; }
-        
-        /* Exam Layout */
-        #examSection { display: none; background-color: #ffffff; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); width: 95%; max-width: 1000px; overflow: hidden; }
-        .exam-layout { display: flex; flex-direction: row; }
-        .left-panel { flex: 2; padding: 30px; }
-        .right-panel { flex: 1; background-color: #f8f9fa; border-left: 2px solid #e0e0e0; padding: 30px; display: flex; flex-direction: column; }
-        .header-bar { display: flex; justify-content: space-between; align-items: center; background-color: #165430; color: white; padding: 10px 20px; border-radius: 8px; margin-bottom: 20px; }
-        .timer { font-size: 20px; font-weight: bold; color: #f36621; }
-        
-        .math-container { font-size: 36px; font-family: 'Courier New', monospace; font-weight: bold; display: flex; flex-direction: column; align-items: center; margin: 0 auto 30px auto; line-height: 1.6; }
-        .math-aligner { display: flex; flex-direction: column; align-items: flex-end; width: 150px; }
-        .math-aligner div { text-align: right; width: 100%; letter-spacing: 2px; }
-        
+        /* Exam MCQ & Buttons */
         .mcq-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; max-width: 300px; margin: 0 auto 25px auto; }
-        .mcq-btn { background: #f8f9fa; border: 2px solid #e0e0e0; padding: 15px; border-radius: 12px; font-size: 22px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; gap: 8px; }
+        .mcq-btn { background: #f8f9fa; border: 2px solid #e0e0e0; padding: 15px; border-radius: 12px; font-size: 22px; font-weight: bold; cursor: pointer; transition: 0.2s; color: #333; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .mcq-btn.selected { background: #f36621; color: white; border-color: #f36621; }
+        .nav-buttons { display: flex; justify-content: space-between; gap: 10px; width: 100%; max-width: 400px; margin: 0 auto; }
+        .nav-buttons button { flex: 1; padding: 12px 5px; font-size: 14px; background-color: #555; }
+        .nav-buttons .btn-review { background-color: #9b59b6; } 
 
         .grid-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; flex-grow: 1; align-content: start; }
         .grid-btn { background-color: #e0e0e0; color: #555; border: 2px solid #ccc; padding: 10px 0; font-size: 14px; border-radius: 6px; cursor: pointer; }
         .grid-btn.answered { background-color: #165430; color: white; border-color: #165430; }
+        .grid-btn.review { background-color: #9b59b6; color: white; border-color: #9b59b6; }
+        .grid-btn.current { border-color: #f36621; font-weight: bold; box-shadow: 0 0 5px rgba(243,102,33,0.5); }
+        .submit-btn { background-color: #f36621; width: 100%; margin-top: auto; }
+        .score-display { font-size: 48px; font-weight: bold; color: #f36621; margin: 15px 0; }
 
-        /* Security Overlays */
-        #camera-container { display: none; position: fixed; bottom: 20px; right: 20px; width: 130px; height: 130px; border-radius: 50%; overflow: hidden; border: 4px solid #f36621; box-shadow: 0 8px 20px rgba(0,0,0,0.4); z-index: 1500; background-color: #000; }
-        #webcam { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.9); z-index: 2000; justify-content: center; align-items: center; }
-        .modal-content { background-color: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 400px; text-align: center; }
-        #countdownOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #165430; color: #f36621; font-size: 150px; font-weight: bold; justify-content: center; align-items: center; z-index: 3000; }
-        
-        .badge-case { background: #f8f9fa; border-radius: 8px; padding: 10px; margin-bottom: 20px; min-height: 50px; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #888; border: 1px dashed #ccc;}
+        /* Modal Summary Box */
+        .summary-box { background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 15px 0; border: 1px solid #eee; text-align: left; }
+        .summary-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 15px; }
 
-        @media (max-width: 768px) { .exam-layout { flex-direction: column; } .right-panel { border-left: none; border-top: 2px solid #e0e0e0; padding: 20px; } }
+        @media (max-width: 768px) {
+            .exam-layout { flex-direction: column; }
+            .right-panel { border-left: none; border-top: 2px solid #e0e0e0; padding: 20px; }
+            #camera-container { width: 90px; height: 90px; bottom: 10px; right: 10px; }
+            .dashboard-grid { flex-direction: column; }
+        }
     </style>
 </head>
-<body oncontextmenu="return false;">
+<body oncontextmenu="return false;" oncopy="return false;" onpaste="return false;">
 
-    <!-- OVERLAYS -->
-    <div id="countdownOverlay">3</div>
-    <div id="camera-container"><video id="webcam" autoplay playsinline muted></video></div>
+    <script>
+        document.onkeydown = function(e) {
+            if(e.keyCode == 123) return false; 
+            if(e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false; 
+            if(e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) return false; 
+            if(e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false; 
+        }
+    </script>
+
+    <div id="camera-container">
+        <div class="recording-dot"></div>
+        <div class="rec-text">REC</div>
+        <video id="webcam" autoplay playsinline muted></video>
+    </div>
     <canvas id="securityCanvas" width="50" height="50" style="display:none;"></canvas>
 
-    <div id="securityModal" class="modal-overlay">
-        <div class="modal-content"><h3 style="color: red;">⚠️ Camera Blocked</h3><p>Face the camera to resume.</p></div>
-    </div>
-    <div id="tabModal" class="modal-overlay">
-        <div class="modal-content"><h3 style="color: red;">⚠️ Security Warning</h3><p>Tab switching logged.</p>
-        <button onclick="document.getElementById('tabModal').style.display='none'" class="btn-full" style="background:#165430;">I Understand</button></div>
-    </div>
-
-    <!-- 1. LOGIN SECTION -->
     <div id="loginSection" class="card">
-        <h2 style="color: #165430;">Aneya Abacus<br><span style="font-size: 18px; color: #f36621;">Student Portal</span></h2>
+        <h2>Aneya Abacus & Vedic Math Centre<br><span style="font-size: 18px; color: #f36621;">Katraj, Pune</span></h2>
         <input type="number" id="mobileInput" placeholder="Mobile Number">
-        <input type="password" id="passwordInput" placeholder="Password">
-        <button onclick="performLogin()" class="btn-full" id="loginBtn">Login</button>
+        
+        <div class="password-container">
+            <input type="password" id="passwordInput" placeholder="Password">
+            <span class="eye-icon" onclick="togglePassword()">
+                <svg id="eyeClosed" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                </svg>
+                <svg id="eyeOpen" style="display: none;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+            </span>
+        </div>
+        
+        <button id="loginBtn" onclick="performLogin()" style="background-color: #f36621; width: 100%;">Login</button>
         <p id="msgBox" style="color: red; margin-top: 15px; display: none;"></p>
     </div>
 
-    <!-- 2. PROFILE HUB -->
-    <div id="profileSection" class="card" style="display: none; max-width: 500px;">
-        <div class="profile-header">
-            <div style="display:flex; align-items:center;">
-                <div class="avatar-circle" onclick="alert('Avatar unlock shop coming soon!')"><img id="profAvatar" src=""></div>
-                <div class="profile-info">
-                    <h3 class="profile-name" id="profName">Student Name</h3>
-                    <div class="profile-level" id="profLevel">Level -</div>
+    <div id="instructionSection" class="card">
+        
+        <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 15px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <img id="profAvatar" src="" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #165430; background: #f8f9fa;">
+                <div style="text-align: left;">
+                    <h3 id="welcomeName" style="margin: 0; color: #165430;">Name</h3>
+                    <span id="profLevel" style="font-size: 12px; font-weight: bold; color: #f36621;">Level</span>
                 </div>
             </div>
-            <div class="streak-box">
-                <div style="font-size: 12px; color: #888; font-weight:bold;">STREAK</div>
-                <div class="streak-num" id="profStreak">🔥 0</div>
+            <div style="text-align: right;">
+                <div id="profStreak" style="font-size: 16px; font-weight: bold; color: #f36621; background:#fff3ed; padding:5px 10px; border-radius:8px;">🔥 0</div>
             </div>
         </div>
-        
-        <div style="text-align: left; font-weight: bold; color: #555; margin-bottom: 5px;">Trophy Case</div>
-        <div class="badge-case" id="profBadges">No badges earned yet. Keep grinding!</div>
+        <div id="profBadges" style="margin-bottom: 15px; font-size: 13px; color: #555; font-weight: bold; text-align: left;"></div>
 
-        <div class="nav-grid" id="navGrid">
-            <button class="nav-btn" onclick="alert('Dashboard coming soon!')">Dashboard</button>
-            <button class="nav-btn" onclick="openLeaderboard()">Leaderboard</button>
-            <button class="nav-btn orange" onclick="initTest(true)">Practice Mode</button>
-            <button class="nav-btn orange" onclick="initTest(false)" style="background: #e74c3c;">Start Test</button>
+        <ul class="instructions-list">
+            <li><b>Duration:</b> You have a strict <b>15-minute</b> time limit to complete the 30-question assessment.</li>
+            <li><b>Tracking:</b> Use the Question Palette to navigate. Answered questions will turn <b>Green</b>. Use "Mark for Review" to flag questions in <b>Purple</b>.</li>
+            <li><b style="color:red;">Academic Integrity:</b> This exam is strictly proctored. Camera access is mandatory. Any attempt to switch tabs, minimize the browser, or obstruct the lens will freeze your exam and flag a security violation.</li>
+        </ul>
+        
+        <div class="hub-btn-grid" id="navGrid">
+            <button onclick="openDashboard()" style="background-color: #165430;">Dashboard</button>
+            <button onclick="openLeaderboard()" style="background-color: #165430;">Leaderboard</button>
+            <button onclick="initTest(true)" style="background-color: #555;">Practice</button>
+            <button onclick="initTest(false)" style="background-color: #f36621;">Start Test</button>
         </div>
-        <p id="hubMsg" style="color: red; margin-top: 15px; font-weight:bold;"></p>
+        <p id="instMsg" style="color: red; margin-top: 15px; font-weight: bold; display: none;"></p>
     </div>
 
-    <!-- 3. LEADERBOARD -->
-    <div id="leaderboardSection" class="wide-card">
+    <div id="dashboardSection">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #165430; padding-bottom: 10px;">
+            <h2 style="margin:0;">Progress Dashboard</h2>
+            <button onclick="backToHub()" style="background-color: #333; padding: 8px 15px;">Back</button>
+        </div>
+        <div class="dashboard-grid">
+            <div class="chart-container"><canvas id="progressChart"></canvas></div>
+            <div class="history-list" id="historyData"></div>
+        </div>
+    </div>
+
+    <div id="leaderboardSection">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #165430; padding-bottom: 10px; margin-bottom:20px;">
             <h2 style="margin:0; color:#165430;">Weekly Ranks</h2>
-            <select id="lbLevelSelect" onchange="fetchLeaderboard()" style="width: 120px; margin:0; padding:8px;">
-                <option value="Jr">Jr</option><option value="Sr">Sr</option>
-                <option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option>
-                <option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option>
-            </select>
+            <div style="display: flex; gap: 10px;">
+                <select id="lbLevelSelect" onchange="fetchLeaderboard()" style="width: 100px; margin:0; padding:8px;">
+                    <option value="Jr">Jr</option><option value="Sr">Sr</option>
+                    <option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option>
+                    <option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option>
+                </select>
+                <button onclick="backToHub()" style="background-color: #333; padding: 8px 15px;">Back</button>
+            </div>
         </div>
         <div id="lbContent">Loading elite rankings...</div>
-        <button class="btn-full" onclick="backToProfile()" style="margin-top: 20px; background:#333;">Back to Profile</button>
     </div>
 
-    <!-- 4. EXAM INTERFACE -->
+    <div id="countdownOverlay">3</div>
+    
+    <div id="securityModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 style="margin-top: 0; color: red;">⚠️ Camera Obstructed ⚠️</h3>
+            <p style="color: #333;">Your camera feed is blocked or paused. The exam is frozen until your face is clearly visible.</p>
+        </div>
+    </div>
+
+    <div id="tabModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 style="margin-top: 0; color: red;">⚠️ SECURITY WARNING ⚠️</h3>
+            <p style="color: #333;">Tab switching or minimizing the browser has been detected. This activity is logged.</p>
+            <button onclick="document.getElementById('tabModal').style.display='none'" style="background-color: #165430; width: 100%; margin-top: 15px;">I Understand</button>
+        </div>
+    </div>
+
+    <div id="submitModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 style="margin-top: 0; color: #165430;">Confirm Submission</h3>
+            <div id="submissionStats" class="summary-box"></div>
+            <p style="color: #555; font-size: 14px; line-height: 1.5; margin-bottom: 0;">Are you sure you want to finalize and submit? Answers cannot be modified after this.</p>
+            <div style="display: flex; gap: 15px; justify-content: center; margin-top: 20px;">
+                <button onclick="closeSubmitModal()" style="background-color: #fff; color: #333; border: 2px solid #ccc; width: 45%;">Cancel</button>
+                <button onclick="gradeExam()" style="background-color: #f36621; width: 45%;">Yes, Submit</button>
+            </div>
+        </div>
+    </div>
+
     <div id="examSection">
         <div class="exam-layout">
             <div class="left-panel">
-                <div class="header-bar"><span id="examTitle">Live Test</span><span class="timer" id="timerDisplay">15:00</span></div>
-                <h4 id="currentQInfo" style="color:#555;">Question 1 of 30</h4>
+                <div class="header-bar">
+                    <span id="examTitleDisplay">Student</span>
+                    <span class="timer" id="timerDisplay">15:00</span>
+                </div>
+                <h4 id="currentQInfo">Question 1</h4>
                 <div class="math-container"><div class="math-aligner" id="mathDisplay"></div></div>
+                
                 <div id="mcqContainer" class="mcq-grid"></div>
+
+                <div class="nav-buttons">
+                    <button onclick="prevQuestion()">Previous</button>
+                    <button id="btnReview" class="btn-review" onclick="toggleReview()">Mark for Review</button>
+                    <button onclick="nextQuestion()">Next</button>
+                </div>
+
             </div>
             <div class="right-panel">
-                <h3 style="color:#165430; margin-top:0;">Question Palette</h3>
+                <h3>Question Palette <span id="examLevelDisplay" style="color: #f36621; float: right; font-size: 16px;"></span></h3>
                 <div class="grid-container" id="qGrid"></div>
-                <button id="submitExamBtn" class="btn-full" onclick="submitTest()">Submit Exam</button>
+                <button id="submitExamBtn" class="submit-btn" onclick="showSubmitModal()">Submit Exam</button>
             </div>
         </div>
+    </div>
+    
+    <div id="resultSection" class="card">
+        <h3 id="resultLevelDisplay" style="color: #f36621; margin-top: 0; margin-bottom: 5px;"></h3>
+        <h2 style="margin-top: 0;">Exam Complete!</h2>
+        <div class="score-display" id="finalScoreDisplay">0 / 30</div>
+        <p style="color: #555; font-weight: bold; margin-bottom: 5px;">Time Taken: <span id="finalTimeDisplay" style="color: #165430;"></span></p>
+        <p style="color: #165430; font-weight: bold; font-size: 14px;">An email has been sent to your parents!</p>
+        <button onclick="location.reload()" style="background-color: #f36621; width: 100%; margin-top: 15px;">Return to Home</button>
     </div>
 
     <script>
@@ -163,21 +284,32 @@
         const API_URL = "https://script.google.com/macros/s/AKfycbynaiUC4KCIubk1EasL70xVD2iPUmQcVOMd7ANp1W69dIGW0AQFkDgA3nYap2lVuSw-/exec";
         const SECRETS = "ANEYA_KATRAJ_2026_SECURE";
         
-        let studentData = {}, questions = [], currentIndex = 0, answers = {};
+        let studentData = {}, questions = [], currentIndex = 0, answers = {}, reviewState = {};
         let timerInterval, securityInterval, examEndTime = 0, examStartTime = 0;
-        let isPracticeMode = false, examActive = false, tabSwitches = 0, videoStream = null;
+        let isPracticeMode = false, examActive = false, tabSwitches = 0, videoStream = null, progressChartInstance = null;
 
-        // Uses free fast robot avatars based on ID 1-12
         function getAvatarUrl(id) { return `https://api.dicebear.com/7.x/bottts/svg?seed=Aneya${id}`; }
 
         function lockNav() {
             let btns = document.getElementById('navGrid').getElementsByTagName('button');
-            for(let b of btns) b.classList.add('greyed-out');
+            for(let b of btns) b.disabled = true;
         }
         function unlockNav() {
             let btns = document.getElementById('navGrid').getElementsByTagName('button');
-            for(let b of btns) b.classList.remove('greyed-out');
-            document.getElementById('hubMsg').innerText = "";
+            for(let b of btns) b.disabled = false;
+            document.getElementById('instMsg').style.display = "none";
+        }
+
+        // --- AUTHENTICATION ---
+        function togglePassword() {
+            const pwd = document.getElementById("passwordInput");
+            const eyeClosed = document.getElementById("eyeClosed");
+            const eyeOpen = document.getElementById("eyeOpen");
+            if (pwd.type === "password") { 
+                pwd.type = "text"; eyeClosed.style.display = "none"; eyeOpen.style.display = "block";
+            } else { 
+                pwd.type = "password"; eyeClosed.style.display = "block"; eyeOpen.style.display = "none";
+            }
         }
 
         async function performLogin() {
@@ -197,29 +329,68 @@
                     studentData = data; studentData.mobile = mobile;
                     document.getElementById('loginSection').style.display = "none";
                     
-                    document.getElementById('profName').innerText = data.name;
+                    // Populate Profile Hub inside Instructions Card
+                    document.getElementById('welcomeName').innerText = data.name;
                     document.getElementById('profLevel').innerText = "Level " + data.level;
                     document.getElementById('profStreak').innerText = "🔥 " + data.currentStreak;
                     document.getElementById('profAvatar').src = getAvatarUrl(data.avatarId);
-                    if(data.badges) document.getElementById('profBadges').innerHTML = `<span style='color:#f36621; font-weight:bold;'>🏆 ${data.badges}</span>`;
+                    if(data.badges) document.getElementById('profBadges').innerHTML = `🏆 Badges: <span style='color:#f36621;'>${data.badges}</span>`;
                     
-                    document.getElementById('lbLevelSelect').value = data.level; // Default LB to their level
-                    document.getElementById('profileSection').style.display = "block";
+                    document.getElementById('lbLevelSelect').value = data.level; 
+                    document.getElementById('instructionSection').style.display = "block";
                 } else { 
                     msg.style.color="red"; msg.innerText = data.message; document.getElementById('loginBtn').disabled = false;
                 }
             } catch(e) { msg.style.color="red"; msg.innerText = "Connection failed!"; document.getElementById('loginBtn').disabled = false; }
         }
 
-        function backToProfile() {
+        function backToHub() {
             document.getElementById('leaderboardSection').style.display = "none";
-            document.getElementById('profileSection').style.display = "block";
+            document.getElementById('dashboardSection').style.display = "none";
+            document.getElementById('instructionSection').style.display = "block";
             unlockNav();
         }
 
+        // --- DASHBOARD ---
+        async function openDashboard() {
+            lockNav();
+            let msg = document.getElementById('instMsg');
+            msg.style.display = "block"; msg.style.color = "#165430"; msg.innerText = "Loading Dashboard...";
+            
+            try {
+                let res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "getDashboard", mobile: studentData.mobile, apiKey: SECRETS }) });
+                let data = await res.json();
+                if(data.success && data.listData.length > 0) {
+                    let html = "";
+                    data.listData.forEach(item => {
+                        let cheatTag = item.tabSwitches > 0 ? `<div class="cheat-badge">⚠️ ${item.tabSwitches} Warnings</div>` : "";
+                        let timeTag = item.timeTaken !== "N/A" ? `<br><span style="font-size:12px; color:#555;">⏱️ ${item.timeTaken}</span>` : "";
+                        html += `<div class="history-item">
+                                    <div><strong>${item.date}</strong> <span style="color:#666; font-size: 12px;">${item.time}</span><br>
+                                    <span style="font-size:13px; color:#165430;">Level ${item.level}</span> ${cheatTag} ${timeTag}</div>
+                                    <div class="score-badge">${item.score} / ${item.total}</div>
+                                 </div>`;
+                    });
+                    document.getElementById('historyData').innerHTML = html;
+
+                    let labels = data.graphData.map(d => d.date); let scores = data.graphData.map(d => d.score); let maxTotal = Math.max(...data.graphData.map(d => d.total)); 
+                    if (progressChartInstance) progressChartInstance.destroy();
+                    const ctx = document.getElementById('progressChart').getContext('2d');
+                    progressChartInstance = new Chart(ctx, { type: 'line', data: { labels: labels, datasets: [{ label: 'Daily Score', data: scores, borderColor: '#f36621', backgroundColor: 'rgba(243, 102, 33, 0.2)', borderWidth: 3, pointBackgroundColor: '#165430', pointRadius: 5, fill: true, tension: 0.3 }] }, options: { responsive: true, maintainAspectRatio: false } });
+                } else { document.getElementById('historyData').innerHTML = "<p>No past exams found.</p>"; }
+                
+                document.getElementById('instructionSection').style.display = "none";
+                document.getElementById('dashboardSection').style.display = "block";
+            } catch(e) { msg.style.color="red"; msg.innerText="Dashboard error."; unlockNav(); }
+        }
+
+        // --- LEADERBOARD ---
         async function openLeaderboard() {
             lockNav();
-            document.getElementById('profileSection').style.display = "none";
+            let msg = document.getElementById('instMsg');
+            msg.style.display = "block"; msg.style.color = "#165430"; msg.innerText = "Loading Leaderboard...";
+            
+            document.getElementById('instructionSection').style.display = "none";
             document.getElementById('leaderboardSection').style.display = "block";
             fetchLeaderboard();
         }
@@ -249,10 +420,12 @@
             } catch(e) { box.innerHTML = "<p style='color:red;'>Failed to load leaderboard.</p>"; }
         }
 
+        // --- EXAM / PRACTICE INIT ---
         async function initTest(isPractice) {
             lockNav();
             isPracticeMode = isPractice;
-            let msg = document.getElementById('hubMsg');
+            let msg = document.getElementById('instMsg');
+            msg.style.display = "block"; msg.style.color = "#165430";
             msg.innerText = isPractice ? "Loading Practice Sandbox..." : "Connecting Secure Live Exam...";
             
             if (!isPractice) {
@@ -261,7 +434,7 @@
                     document.getElementById('webcam').srcObject = videoStream; 
                     document.getElementById('camera-container').style.display = "block";
                 } catch (err) {
-                    msg.innerText = "Camera Access Denied! Cannot start live exam."; unlockNav(); return; 
+                    msg.style.color="red"; msg.innerText = "Camera Access Denied! Cannot start live test."; unlockNav(); return; 
                 }
             }
 
@@ -273,13 +446,13 @@
                     questions = data.questions.map(q => { q.options = generateOptions(q.answer); return q; });
                     startCountdown();
                 } else { 
-                    msg.innerText = data.message || "Failed to get questions."; 
+                    msg.style.color="red"; msg.innerText = data.message || "Failed to get questions."; 
                     if(videoStream) videoStream.getTracks().forEach(t => t.stop()); 
                     document.getElementById('camera-container').style.display = "none";
                     unlockNav(); 
                 }
             } catch (err) {
-                msg.innerText = "Database connection failed."; unlockNav();
+                msg.style.color="red"; msg.innerText = "Database connection failed."; unlockNav();
             }
         }
 
@@ -297,16 +470,18 @@
         }
 
         function startCountdown() {
-            document.getElementById('profileSection').style.display = "none";
+            document.getElementById('instructionSection').style.display = "none";
             const cEl = document.getElementById('countdownOverlay'); cEl.style.display = "flex"; let count = 3; cEl.innerText = count;
             let intv = setInterval(() => { count--; if(count > 0) cEl.innerText = count; else if(count === 0) cEl.innerText = "GO!"; else { clearInterval(intv); cEl.style.display = "none"; launchTestUI(); } }, 1000);
         }
 
+        // --- ORIGINAL EXAM UI LOGIC ---
         function launchTestUI() {
-            examActive = true; tabSwitches = 0; answers = {}; currentIndex = 0;
+            examActive = true; tabSwitches = 0; answers = {}; reviewState = {}; currentIndex = 0;
             examStartTime = Date.now(); examEndTime = Date.now() + (15 * 60 * 1000);
             
-            document.getElementById('examTitle').innerText = isPracticeMode ? "PRACTICE MODE (No Tracking)" : `LIVE EXAM: Level ${studentData.level}`;
+            document.getElementById('examTitleDisplay').innerText = isPracticeMode ? "Practice Mode" : studentData.name;
+            document.getElementById('examLevelDisplay').innerText = "Level " + studentData.level;
             document.getElementById('examSection').style.display = "block";
             
             buildGrid(); loadQuestion(0);
@@ -334,69 +509,103 @@
 
         document.addEventListener("visibilitychange", () => {
             if (examActive && !isPracticeMode) {
-                if (Date.now() >= examEndTime) { submitTest(); return; }
+                if (Date.now() >= examEndTime) { gradeExam(); return; }
                 if (document.visibilityState === 'hidden') { tabSwitches++; document.getElementById('tabModal').style.display = 'flex'; }
             }
         });
 
         function buildGrid() {
-            let html = ""; for(let i=0; i<questions.length; i++) html += `<button class="grid-btn" id="btn-q${i}" onclick="loadQuestion(${i})">${i + 1}</button>`;
+            let html = ""; for(let i=0; i<questions.length; i++) html += `<button class="grid-btn" id="btn-q${i}" onclick="jumpToQuestion(${i})">${i + 1}</button>`;
             document.getElementById('qGrid').innerHTML = html;
         }
 
-        function loadQuestion(idx) {
-            currentIndex = idx; document.getElementById('currentQInfo').innerText = `Question ${idx+1} of 30`;
-            let h = ""; questions[idx].sum.split(',').forEach(n => h += `<div>${n.trim()}</div>`); document.getElementById('mathDisplay').innerHTML = h;
-            let mH = "", cur = answers[idx], lbl = ['A','B','C','D'];
-            questions[idx].options.forEach((opt, i) => {
-                let sel = (cur !== undefined && cur == opt) ? "selected" : "";
-                mH += `<button class="mcq-btn ${sel}" onclick="selectOpt(${opt})"><span style="color:#888;">${lbl[i]})</span> ${opt}</button>`;
-            });
-            document.getElementById('mcqContainer').innerHTML = mH;
-            
-            for(let i=0; i<30; i++) {
-                let b = document.getElementById(`btn-q${i}`); b.className = "grid-btn";
-                if(answers[i] !== undefined) b.classList.add('answered');
-                if(i === currentIndex) b.style.borderColor = "#f36621"; else b.style.borderColor = "#ccc";
+        function updateGridUI() {
+            for(let i=0; i<questions.length; i++) {
+                let btn = document.getElementById(`btn-q${i}`); btn.className = "grid-btn";
+                if(answers[i] !== undefined) btn.classList.add('answered');
+                if(reviewState[i]) btn.classList.add('review'); 
+                if(i === currentIndex) btn.classList.add('current');
             }
         }
 
-        function selectOpt(val) {
-            answers[currentIndex] = val; loadQuestion(currentIndex);
-            setTimeout(() => { if(currentIndex < 29) loadQuestion(currentIndex + 1); }, 300);
+        function loadQuestion(index) {
+            currentIndex = index; document.getElementById('currentQInfo').innerText = `Question ${index+1} of ${questions.length}`;
+            let html = ""; questions[index].sum.split(',').forEach(n => html += `<div>${n.trim()}</div>`); document.getElementById('mathDisplay').innerHTML = html;
+            
+            let mcqHtml = ""; let currentAnswer = answers[index]; const labels = ['A', 'B', 'C', 'D'];
+            questions[index].options.forEach((opt, idx) => {
+                let isSelected = (currentAnswer !== undefined && currentAnswer == opt) ? "selected" : "";
+                mcqHtml += `<button class="mcq-btn ${isSelected}" onclick="selectOption(${opt})">
+                                <span style="color:#888; font-size:16px; margin-right:8px;">${labels[idx]})</span> ${opt}
+                            </button>`;
+            });
+            document.getElementById('mcqContainer').innerHTML = mcqHtml;
+            document.getElementById('btnReview').innerText = reviewState[index] ? "Unmark" : "Mark for Review";
+            updateGridUI();
         }
+
+        function toggleReview() { reviewState[currentIndex] = !reviewState[currentIndex]; loadQuestion(currentIndex); }
+        function selectOption(val) {
+            answers[currentIndex] = val; loadQuestion(currentIndex); 
+            setTimeout(() => { if(currentIndex < questions.length - 1) loadQuestion(currentIndex + 1); else updateGridUI(); }, 400); 
+        }
+
+        function jumpToQuestion(i) { loadQuestion(i); }
+        function prevQuestion() { if(currentIndex > 0) loadQuestion(currentIndex - 1); }
+        function nextQuestion() { if(currentIndex < questions.length - 1) loadQuestion(currentIndex + 1); }
 
         function updateTimer() {
-            let t = Math.max(0, Math.round((examEndTime - Date.now()) / 1000));
-            document.getElementById('timerDisplay').innerText = `${Math.floor(t/60)}:${t%60<10?'0':''}${t%60}`;
-            if(t <= 0) submitTest();
+            let timeLeft = Math.max(0, Math.round((examEndTime - Date.now()) / 1000));
+            if(timeLeft <= 0) { clearInterval(timerInterval); closeSubmitModal(); gradeExam(); return; }
+            let m = Math.floor(timeLeft/60), s = timeLeft%60;
+            document.getElementById('timerDisplay').innerText = `${m}:${s<10?'0'+s:s}`;
         }
 
-        async function submitTest() {
-            examActive = false; clearInterval(timerInterval); clearInterval(securityInterval);
-            if(videoStream) { videoStream.getTracks().forEach(t => t.stop()); document.getElementById('camera-container').style.display="none"; }
-            
-            document.getElementById('examSection').style.display = "none";
-            
-            let score = 0; for(let i=0; i<30; i++) if(answers[i] == questions[i].answer) score++;
-            let timeS = Math.min(900, Math.floor((Date.now() - examStartTime) / 1000));
-            let timeStr = `${Math.floor(timeS/60)}m ${timeS%60}s`;
+        function showSubmitModal() { 
+            let attempted = Object.keys(answers).length; let skipped = questions.length - attempted;
+            let reviewed = 0; for (let key in reviewState) { if (reviewState[key]) reviewed++; }
+            let statsHtml = `<div class="summary-row"><span style="color: #165430; font-weight: bold;">Attempted:</span> <span style="font-weight: bold;">${attempted}</span></div>
+                             <div class="summary-row"><span style="color: #9b59b6; font-weight: bold;">Marked for Review:</span> <span style="font-weight: bold;">${reviewed}</span></div>
+                             <div class="summary-row" style="margin-bottom: 0;"><span style="color: #555; font-weight: bold;">Skipped:</span> <span style="font-weight: bold;">${skipped}</span></div>`;
+            document.getElementById('submissionStats').innerHTML = statsHtml;
+            document.getElementById('submitModal').style.display = "flex"; 
+        }
+        function closeSubmitModal() { document.getElementById('submitModal').style.display = "none"; }
 
-            if(isPracticeMode) {
+        async function gradeExam() {
+            examActive = false; stopCamera(); clearInterval(timerInterval); clearInterval(securityInterval);
+            document.getElementById('submitModal').style.display = "none"; document.getElementById('examSection').style.display = "none";
+            
+            let score = 0; for(let i=0; i<questions.length; i++) if(answers[i] == questions[i].answer) score++;
+            let totalSecs = Math.min(900, Math.floor((Date.now() - examStartTime) / 1000));
+            let timeStr = Math.floor(totalSecs / 60) + "m " + (totalSecs % 60) + "s";
+
+            if (isPracticeMode) {
                 alert(`PRACTICE COMPLETE!\nScore: ${score}/30\nTime: ${timeStr}\n(This was not recorded)`);
-                document.getElementById('profileSection').style.display = "block";
+                document.getElementById('instructionSection').style.display = "block";
                 unlockNav(); return;
             }
 
-            const cEl = document.getElementById('countdownOverlay'); cEl.style.display = "flex"; cEl.innerText = "Saving...";
+            document.getElementById('countdownOverlay').style.display = "flex"; document.getElementById('countdownOverlay').innerText = "Saving...";
             
             try {
-                await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "submitExam", mobile: studentData.mobile, name: studentData.name, email: studentData.email, level: studentData.level, score: score, total: 30, apiKey: SECRETS, tabSwitches: tabSwitches, timeTaken: timeStr }) });
+                await fetch(API_URL, { 
+                    method: 'POST', body: JSON.stringify({ 
+                        action: "submitExam", mobile: studentData.mobile, name: studentData.name,
+                        email: studentData.email, level: studentData.level, score: score,
+                        total: questions.length, apiKey: SECRETS, tabSwitches: tabSwitches, timeTaken: timeStr 
+                    }) 
+                });
             } catch(e) {}
             
-            alert(`EXAM SUBMITTED!\nScore: ${score}/30\nTime: ${timeStr}\nYour results have been locked in for the weekly leaderboard.`);
-            location.reload(); 
+            document.getElementById('countdownOverlay').style.display = "none"; 
+            document.getElementById('resultSection').style.display = "block";
+            document.getElementById('resultLevelDisplay').innerText = "Level " + studentData.level;
+            document.getElementById('finalScoreDisplay').innerText = score + " / " + questions.length;
+            document.getElementById('finalTimeDisplay').innerText = timeStr; 
         }
+
+        function stopCamera() { if(videoStream) { videoStream.getTracks().forEach(t => t.stop()); document.getElementById('camera-container').style.display = "none"; } }
     </script>
 </body>
 </html>
