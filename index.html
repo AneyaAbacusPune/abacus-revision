@@ -95,6 +95,10 @@
         .score-badge { background: #165430; color: white; padding: 5px 10px; border-radius: 20px; font-weight: bold; font-size: 14px;}
         .cheat-badge { background: #fc0202; color: white; padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: bold; margin-top: 5px; display: inline-block;}
 
+        /* Modal Summary Box */
+        .summary-box { background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 15px 0; border: 1px solid #eee; text-align: left; }
+        .summary-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 15px; }
+
         @media (max-width: 768px) {
             .exam-layout { flex-direction: column; }
             .right-panel { border-left: none; border-top: 2px solid #e0e0e0; padding: 20px; }
@@ -121,6 +125,7 @@
     </div>
     <canvas id="securityCanvas" width="50" height="50" style="display:none;"></canvas>
 
+    <!-- LOGIN SECTION -->
     <div id="loginSection" class="card">
         <h2>Aneya Abacus & Vedic Math Centre<br><span style="font-size: 18px; color: #f36621;">Katraj, Pune</span></h2>
         <input type="number" id="mobileInput" placeholder="Mobile Number">
@@ -146,6 +151,7 @@
         <p id="message" style="color: red; margin-top: 15px; display: none;"></p>
     </div>
 
+    <!-- INSTRUCTIONS -->
     <div id="instructionSection" class="card">
         <h2>Welcome, <span id="welcomeName" style="color: #f36621;">Student</span>!</h2>
         <ul class="instructions-list">
@@ -164,6 +170,7 @@
         <p id="instMsg" style="color: red; margin-top: 15px; display: none;"></p>
     </div>
 
+    <!-- DASHBOARD -->
     <div id="dashboardSection">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #165430; padding-bottom: 10px;">
             <h2 style="margin:0;">Progress Dashboard: <span id="dashStudentName" style="color: #f36621;"></span></h2>
@@ -175,6 +182,7 @@
         </div>
     </div>
 
+    <!-- MODALS -->
     <div id="countdownOverlay">3</div>
     
     <div id="securityModal" class="modal-overlay">
@@ -192,17 +200,22 @@
         </div>
     </div>
 
+    <!-- NEW: Dynamic Submit Modal -->
     <div id="submitModal" class="modal-overlay">
         <div class="modal-content">
             <h3 style="margin-top: 0; color: #165430;">Confirm Submission</h3>
-            <p style="color: #555; font-size: 15px; line-height: 1.5;">Are you sure you want to finalize and submit your assessment? Once submitted, your answers will be locked and cannot be modified.</p>
-            <div style="display: flex; gap: 15px; justify-content: center; margin-top: 25px;">
-                <button onclick="closeSubmitModal()" style="background-color: #fff; color: #333; border: 2px solid #ccc; width: 45%;">No</button>
-                <button onclick="gradeExam()" style="background-color: #165430; width: 45%;">Yes, Submit</button>
+            <div id="submissionStats" class="summary-box">
+                <!-- Stats injected via JS -->
+            </div>
+            <p style="color: #555; font-size: 14px; line-height: 1.5; margin-bottom: 0;">Are you sure you want to finalize and submit? Answers cannot be modified after this.</p>
+            <div style="display: flex; gap: 15px; justify-content: center; margin-top: 20px;">
+                <button onclick="closeSubmitModal()" style="background-color: #fff; color: #333; border: 2px solid #ccc; width: 45%;">Cancel</button>
+                <button onclick="gradeExam()" style="background-color: #f36621; width: 45%;">Yes, Submit</button>
             </div>
         </div>
     </div>
 
+    <!-- EXAM INTERFACE -->
     <div id="examSection">
         <div class="exam-layout">
             <div class="left-panel">
@@ -213,8 +226,10 @@
                 <h4 id="currentQInfo">Question 1</h4>
                 <div class="math-container"><div class="math-aligner" id="mathDisplay"></div></div>
                 
+                <!-- 4 MCQ OPTIONS CONTAINER -->
                 <div id="mcqContainer" class="mcq-grid"></div>
 
+                <!-- MANUAL NAVIGATION & REVIEW BUTTONS -->
                 <div class="nav-buttons">
                     <button onclick="prevQuestion()">Previous</button>
                     <button id="btnReview" class="btn-review" onclick="toggleReview()">Mark for Review</button>
@@ -230,6 +245,7 @@
         </div>
     </div>
     
+    <!-- RESULTS -->
     <div id="resultSection" class="card">
         <h3 id="resultLevelDisplay" style="color: #f36621; margin-top: 0; margin-bottom: 5px;"></h3>
         <h2 style="margin-top: 0;">Exam Complete!</h2>
@@ -285,11 +301,10 @@
             }
         };
 
-        // NEW: Handles auto-submit if tab is inactive and time runs out
         document.addEventListener("visibilitychange", () => {
             if (examActive) {
                 if (Date.now() >= examEndTime) {
-                    gradeExam(); // Force submit immediately if they return after timer hits 0
+                    gradeExam(); 
                     return;
                 }
                 if (document.visibilityState === 'hidden') {
@@ -369,7 +384,6 @@
             } catch(e) { document.getElementById('historyData').innerHTML = "<p style='color:red;'>Error loading data.</p>"; }
         }
 
-        // NEW: Handles floating point decimal glitch with toFixed(3)
         function generateOptions(correctAnswer) {
             let options = new Set();
             let correct = Number(correctAnswer);
@@ -493,7 +507,6 @@
             }
         }
 
-        // NEW: Added A, B, C, D labels to the buttons
         function loadQuestion(index) {
             currentIndex = index; document.getElementById('currentQInfo').innerText = `Question ${index+1} of ${questions.length}`;
             let html = ""; questions[index].sum.split(',').forEach(n => html += `<div>${n.trim()}</div>`); document.getElementById('mathDisplay').innerHTML = html;
@@ -544,7 +557,36 @@
             document.getElementById('timerDisplay').innerText = `${m}:${s<10?'0'+s:s}`;
         }
 
-        function showSubmitModal() { document.getElementById('submitModal').style.display = "flex"; }
+        // NEW: Dynamic calculation for the submission modal
+        function showSubmitModal() { 
+            let total = questions.length;
+            let attempted = Object.keys(answers).length;
+            let skipped = total - attempted;
+            let reviewed = 0;
+            
+            for (let key in reviewState) {
+                if (reviewState[key]) reviewed++;
+            }
+            
+            let statsHtml = `
+                <div class="summary-row">
+                    <span style="color: #165430; font-weight: bold;">Attempted:</span> 
+                    <span style="font-weight: bold;">${attempted}</span>
+                </div>
+                <div class="summary-row">
+                    <span style="color: #9b59b6; font-weight: bold;">Marked for Review:</span> 
+                    <span style="font-weight: bold;">${reviewed}</span>
+                </div>
+                <div class="summary-row" style="margin-bottom: 0;">
+                    <span style="color: #555; font-weight: bold;">Skipped (Unanswered):</span> 
+                    <span style="font-weight: bold;">${skipped}</span>
+                </div>
+            `;
+            
+            document.getElementById('submissionStats').innerHTML = statsHtml;
+            document.getElementById('submitModal').style.display = "flex"; 
+        }
+        
         function closeSubmitModal() { document.getElementById('submitModal').style.display = "none"; }
 
         async function gradeExam() {
@@ -552,7 +594,6 @@
             document.getElementById('submitModal').style.display = "none"; document.getElementById('examSection').style.display = "none";
             document.getElementById('countdownOverlay').style.display = "flex"; document.getElementById('countdownOverlay').innerText = "Grading...";
             
-            // NEW: Hard cap maximum time to 15 minutes (900 seconds)
             let totalSecs = Math.floor((Date.now() - examStartTime) / 1000);
             if (totalSecs > 900) totalSecs = 900; 
             let timeStr = Math.floor(totalSecs / 60) + "m " + (totalSecs % 60) + "s";
