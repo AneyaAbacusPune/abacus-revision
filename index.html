@@ -69,14 +69,14 @@
         
         /* MCQ Grid Styling */
         .mcq-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; max-width: 300px; margin: 0 auto 25px auto; }
-        .mcq-btn { background: #f8f9fa; border: 2px solid #e0e0e0; padding: 15px; border-radius: 12px; font-size: 22px; font-weight: bold; cursor: pointer; transition: 0.2s; color: #333; }
+        .mcq-btn { background: #f8f9fa; border: 2px solid #e0e0e0; padding: 15px; border-radius: 12px; font-size: 22px; font-weight: bold; cursor: pointer; transition: 0.2s; color: #333; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .mcq-btn:hover { border-color: #f36621; }
         .mcq-btn.selected { background: #f36621; color: white; border-color: #f36621; }
 
         /* Navigation Buttons Styling */
         .nav-buttons { display: flex; justify-content: space-between; gap: 10px; width: 100%; max-width: 400px; margin: 0 auto; }
         .nav-buttons button { flex: 1; padding: 12px 5px; font-size: 14px; background-color: #555; }
-        .nav-buttons .btn-review { background-color: #9b59b6; } /* Professional Purple for Review */
+        .nav-buttons .btn-review { background-color: #9b59b6; } 
 
         /* Palette Grid Styling */
         .grid-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; flex-grow: 1; align-content: start; }
@@ -285,10 +285,17 @@
             }
         };
 
+        // NEW: Handles auto-submit if tab is inactive and time runs out
         document.addEventListener("visibilitychange", () => {
-            if (document.visibilityState === 'hidden' && examActive) {
-                tabSwitches++; persistData(); 
-                document.getElementById('tabModal').style.display = 'flex';
+            if (examActive) {
+                if (Date.now() >= examEndTime) {
+                    gradeExam(); // Force submit immediately if they return after timer hits 0
+                    return;
+                }
+                if (document.visibilityState === 'hidden') {
+                    tabSwitches++; persistData(); 
+                    document.getElementById('tabModal').style.display = 'flex';
+                }
             }
         });
 
@@ -362,7 +369,7 @@
             } catch(e) { document.getElementById('historyData').innerHTML = "<p style='color:red;'>Error loading data.</p>"; }
         }
 
-        // Generate options with Abacus logic
+        // NEW: Handles floating point decimal glitch with toFixed(3)
         function generateOptions(correctAnswer) {
             let options = new Set();
             let correct = Number(correctAnswer);
@@ -373,15 +380,15 @@
             
             for (let i = 0; i < possibleOffsets.length; i++) {
                 if (options.size === 4) break;
-                let fakeAns = correct + possibleOffsets[i];
+                let fakeAns = Number((correct + possibleOffsets[i]).toFixed(3));
                 if (correct >= 0 && fakeAns < 0) continue;
                 options.add(fakeAns);
             }
             
             let fallback = 1;
             while(options.size < 4) {
-                if (correct >= 0) options.add(correct + fallback);
-                else options.add(correct - fallback);
+                let fakeAns = correct >= 0 ? Number((correct + fallback).toFixed(3)) : Number((correct - fallback).toFixed(3));
+                options.add(fakeAns);
                 fallback++;
             }
             
@@ -481,24 +488,26 @@
             for(let i=0; i<questions.length; i++) {
                 let btn = document.getElementById(`btn-q${i}`); btn.className = "grid-btn";
                 if(answers[i] !== undefined) btn.classList.add('answered');
-                if(reviewState[i]) btn.classList.add('review'); // Purple overrides Green
+                if(reviewState[i]) btn.classList.add('review'); 
                 if(i === currentIndex) btn.classList.add('current');
             }
         }
 
+        // NEW: Added A, B, C, D labels to the buttons
         function loadQuestion(index) {
             currentIndex = index; document.getElementById('currentQInfo').innerText = `Question ${index+1} of ${questions.length}`;
             let html = ""; questions[index].sum.split(',').forEach(n => html += `<div>${n.trim()}</div>`); document.getElementById('mathDisplay').innerHTML = html;
             
             let mcqHtml = "";
             let currentAnswer = answers[index];
-            questions[index].options.forEach(opt => {
+            const labels = ['A', 'B', 'C', 'D'];
+            questions[index].options.forEach((opt, idx) => {
                 let isSelected = (currentAnswer !== undefined && currentAnswer == opt) ? "selected" : "";
-                mcqHtml += `<button class="mcq-btn ${isSelected}" onclick="selectOption(${opt})">${opt}</button>`;
+                mcqHtml += `<button class="mcq-btn ${isSelected}" onclick="selectOption(${opt})">
+                                <span style="color:#888; font-size:16px; margin-right:8px;">${labels[idx]})</span> ${opt}
+                            </button>`;
             });
             document.getElementById('mcqContainer').innerHTML = mcqHtml;
-            
-            // Update Review Button Text
             document.getElementById('btnReview').innerText = reviewState[index] ? "Unmark" : "Mark for Review";
             
             updateGridUI(); persistData();
@@ -525,9 +534,14 @@
 
         function updateTimer() {
             let timeLeft = Math.max(0, Math.round((examEndTime - Date.now()) / 1000));
+            if(timeLeft <= 0) { 
+                clearInterval(timerInterval);
+                closeSubmitModal(); 
+                gradeExam(); 
+                return;
+            }
             let m = Math.floor(timeLeft/60), s = timeLeft%60;
             document.getElementById('timerDisplay').innerText = `${m}:${s<10?'0'+s:s}`;
-            if(timeLeft <= 0) { closeSubmitModal(); gradeExam(); }
         }
 
         function showSubmitModal() { document.getElementById('submitModal').style.display = "flex"; }
@@ -538,7 +552,9 @@
             document.getElementById('submitModal').style.display = "none"; document.getElementById('examSection').style.display = "none";
             document.getElementById('countdownOverlay').style.display = "flex"; document.getElementById('countdownOverlay').innerText = "Grading...";
             
+            // NEW: Hard cap maximum time to 15 minutes (900 seconds)
             let totalSecs = Math.floor((Date.now() - examStartTime) / 1000);
+            if (totalSecs > 900) totalSecs = 900; 
             let timeStr = Math.floor(totalSecs / 60) + "m " + (totalSecs % 60) + "s";
 
             let score = 0;
